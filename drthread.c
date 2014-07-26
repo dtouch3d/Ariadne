@@ -3,9 +3,7 @@
 static void
 event_thread_init(void *drcontext)
 {
-    static unsigned int tid = 0;
-    tid++;
-    dr_printf("[+] Created thread #%d\n", tid);
+    dr_printf("[+] Created thread with tid #%d\n", dr_get_thread_id(drcontext));
 }
 
 static void
