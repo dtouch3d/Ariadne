@@ -6,6 +6,8 @@ if (NOT DEFINED DynamoRIO_DIR)
   message(STATUS ${DynamoRIO_DIR})
 endif (NOT DEFINED DynamoRIO_DIR)
 
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" "-std=c99")
+
 add_library(drthread SHARED drthread.c)
 find_package(DynamoRIO)
 if (NOT DynamoRIO_FOUND)
