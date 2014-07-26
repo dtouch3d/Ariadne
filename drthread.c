@@ -3,9 +3,40 @@
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 
+static int
+pthread_create_event(void *wrapcxt, OUT void **user_data);
+
+/* Table mapping function names to functions.
+ * http://c-faq.com/misc/symtab.html
+ */
+struct { char* name; int (*funcptr)(); } pthread_symtab[] = {
+    "pthread_create", pthread_create_event,
+};
+
+static int
+pthread_create_event(void *wrapcxt, OUT void **user_data)
+{
+    /* pthread_create check here */
+    dr_printf("[+] Hello from pthread_create_event\n");
+    return;
+}
+
+int (*findfunc(const char *name))()
+{
+    int i;
+
+    for(i = 0; i < SIZE(pthread_symtab); i++) {
+        if(strcmp(name, pthread_symtab[i].name) == 0)
+            return pthread_symtab[i].funcptr;
+        }
+
+    return NULL;
+}
+
+
 const char* const threadlib[] = { "libpthread" };
 
-const char* const threadfuncs[][10] = { {"pthread_mutex_lock", "pthread_create"} };
+const char* const threadfuncs[][10] = { {"pthread_create"} };
 
 static void
 event_thread_init(void *drcontext)
@@ -36,6 +67,10 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
             {
                 void* addr = dr_get_proc_address(lib_handle, threadfuncs[i][j]);
                 dr_printf("[+] Found %s @ %p\n", threadfuncs[i][j], addr);
+                int (*funcp)() = findfunc(threadfuncs[i][j]);
+                dr_printf("%s handler is at %p\n", threadfuncs[i][j], funcp);
+                if(funcp != NULL)
+                    (*funcp)();
             }
         }
     }
