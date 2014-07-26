@@ -3,13 +3,13 @@
 static void
 event_thread_init(void *drcontext)
 {
-    dr_printf("[+] Created thread with tid #%d\n", dr_get_thread_id(drcontext));
+    dr_printf("[+] Thread #%d created\n", dr_get_thread_id(drcontext));
 }
 
 static void
 event_thread_exit(void *drcontext)
 {
-    dr_printf("[+] Thread exit event\n");
+    dr_printf("[+] Thread #%d exit\n", dr_get_thread_id(drcontext));
 }
 
 
