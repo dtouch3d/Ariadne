@@ -1,19 +1,19 @@
 #include "dr_api.h"
 #include <string.h>
 
-#define SIZE(A) sizeof(A)/sizeof(A[0])
+#include "drthread.h"
 
-static int
+static void
 pthread_create_event(void *wrapcxt, OUT void **user_data);
 
 /* Table mapping function names to functions.
  * http://c-faq.com/misc/symtab.html
  */
-struct { char* name; int (*funcptr)(); } pthread_symtab[] = {
+struct { char* name; void (*funcptr)(); } pthread_symtab[] = {
     "pthread_create", pthread_create_event,
 };
 
-static int
+static void
 pthread_create_event(void *wrapcxt, OUT void **user_data)
 {
     /* pthread_create check here */
@@ -21,7 +21,7 @@ pthread_create_event(void *wrapcxt, OUT void **user_data)
     return;
 }
 
-int (*findfunc(const char *name))()
+void (*findfunc(const char *name))()
 {
     int i;
 
@@ -67,7 +67,7 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
             {
                 void* addr = dr_get_proc_address(lib_handle, threadfuncs[i][j]);
                 dr_printf("[+] Found %s @ %p\n", threadfuncs[i][j], addr);
-                int (*funcp)() = findfunc(threadfuncs[i][j]);
+                void (*funcp)() = findfunc(threadfuncs[i][j]);
                 dr_printf("%s handler is at %p\n", threadfuncs[i][j], funcp);
                 if(funcp != NULL)
                     (*funcp)();
