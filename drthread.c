@@ -3,37 +3,6 @@
 
 #include "drthread.h"
 
-static void
-pthread_create_event(void *wrapcxt, OUT void **user_data);
-
-/* Table mapping function names to functions.
- * http://c-faq.com/misc/symtab.html
- */
-struct { char* name; void (*funcptr)(); } pthread_symtab[] = {
-    "pthread_create", pthread_create_event,
-};
-
-static void
-pthread_create_event(void *wrapcxt, OUT void **user_data)
-{
-    /* pthread_create check here */
-    dr_printf("[+] Hello from pthread_create_event\n");
-    return;
-}
-
-void (*findfunc(const char *name))()
-{
-    int i;
-
-    for(i = 0; i < SIZE(pthread_symtab); i++) {
-        if(strcmp(name, pthread_symtab[i].name) == 0)
-            return pthread_symtab[i].funcptr;
-        }
-
-    return NULL;
-}
-
-
 const char* const threadlib[] = { "libpthread" };
 
 const char* const threadfuncs[][10] = { {"pthread_create"} };
