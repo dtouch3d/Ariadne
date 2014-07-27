@@ -2,16 +2,22 @@
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 
-symtab_t libtab[] = {pthread_symtab};
+symtab_t* libtab[] = {pthread_symtab};
 
 void (*findfunc(const char *name))()
 {
-    int i;
+    int i,j;
 
-    for(i = 0; i < SIZE(pthread_symtab); i++) {
-        if(strcmp(name, pthread_symtab[i].name) == 0)
-            return pthread_symtab[i].funcptr;
+    for(i=0; i<SIZE(libtab); i++)
+    {
+        if(strcmp(name, libtab[i][0].name) == 0)
+        {
+            for(j=1; j<SIZE(libtab[i]); j++)
+            {
+                if(strcmp(name, libtab[i][0].name) == 0)
+                    return libtab[i][j].funcptr;
+            }
         }
-
+    }
     return NULL;
 }
