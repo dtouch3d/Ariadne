@@ -3,9 +3,6 @@
 
 #include "drthread.h"
 
-const char* const threadlib[] = { "libpthread" };
-
-const char* const threadfuncs[][10] = { {"pthread_create"} };
 
 static void
 event_thread_init(void *drcontext)
@@ -32,12 +29,13 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
         if(strstr(lib, threadlib[i]) != NULL)
         {
             dr_printf("[+] Loaded %s library\n", lib);
-            for(j=0; j<SIZE(threadfuncs[i]) && threadfuncs[i][j] != NULL; j++)
+            for(j=0; j<SIZE(symtab); j++)
             {
-                void* addr = dr_get_proc_address(lib_handle, threadfuncs[i][j]);
-                dr_printf("[+] Found %s @ %p\n", threadfuncs[i][j], addr);
-                void (*funcp)() = findfunc(threadfuncs[i][j]);
-                dr_printf("%s handler is at %p\n", threadfuncs[i][j], funcp);
+                symtab_t func = symtab[j];
+                void* addr = dr_get_proc_address(lib_handle, func.name);
+                dr_printf("[+] Found %s @ %p\n", func.name, addr);
+                void (*funcp)() = findfunc(func.name);
+                dr_printf("%s handler is at %p\n", func.name, funcp);
                 if(funcp != NULL)
                     (*funcp)();
             }
