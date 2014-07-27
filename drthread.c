@@ -1,20 +1,8 @@
 #include "dr_api.h"
+#include "drwrap.h"
 #include <string.h>
 
 #include "drthread.h"
-
-
-static void
-event_thread_init(void *drcontext)
-{
-    dr_printf("[+] Thread #%d created\n", dr_get_thread_id(drcontext));
-}
-
-static void
-event_thread_exit(void *drcontext)
-{
-    dr_printf("[+] Thread #%d exit\n", dr_get_thread_id(drcontext));
-}
 
 static void
 event_module_load(void *drcontext, const module_data_t *info, bool loaded)
@@ -37,16 +25,23 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
                 void (*funcp)() = findfunc(func.name);
                 dr_printf("%s handler is at %p\n", func.name, funcp);
                 if(funcp != NULL)
-                    (*funcp)();
+                    drwrap_wrap((app_pc)addr, funcp, NULL);
             }
         }
     }
 }
 
+static void
+event_exit(void)
+{
+    drwrap_exit();
+}
+
 DR_EXPORT void
 dr_init(client_id_t id)
 {
-    dr_register_thread_init_event(event_thread_init);
-    dr_register_thread_exit_event(event_thread_exit);
+    drwrap_init();
     dr_register_module_load_event(event_module_load);
+    dr_register_exit_event(event_exit);
+
 }
