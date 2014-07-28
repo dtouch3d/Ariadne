@@ -3,6 +3,12 @@ pthread_create_event(void *wrapcxt, OUT void **user_data)
 {
     /* pthread_create wrap here */
     dr_printf("[+] Hello from pthread_create_event\n");
+    app_pc addr = drwrap_get_func(wrapcxt);
+    module_data_t* modinfo = dr_lookup_module(addr);
+
+/*    drsym_info_t sym;*/
+    //sym.struct_size = sizeof(sym);
+    /*drsym_lookup_address(modinfo->full_path, addr-modinfo->start, &sym, DRSYM_DEFAULT_FLAGS);*/
     return;
 }
 
