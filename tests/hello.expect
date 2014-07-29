@@ -1,1 +1,2 @@
-pthread_create_event
+[+] pthread_create_event at .*hello.c:29
+[+] pthread_exit_event at .*hello.c:23
