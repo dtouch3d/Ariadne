@@ -20,3 +20,5 @@ use_DynamoRIO_extension(drthread drsyms)
 # Tests
 enable_testing()
 add_subdirectory(tests)
+
+configure_file(tests/runtest.cmake ${CMAKE_CURRENT_BINARY_DIR}/tests/runtest.cmake COPYONLY)
