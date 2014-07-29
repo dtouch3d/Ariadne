@@ -8,6 +8,7 @@ message(STATUS "${TEST_PROG} ::: ${SRCDIR}")
 # TODO: Args ?
 execute_process(COMMAND ${TEST_PROG}
     RESULT_VARIABLE result
-    OUTPUT_VARIABLE output)
+    OUTPUT_VARIABLE output
+    ERROR_VARIABLE err)
 
-message(STATUS "${CMAKE_CURRENT_BINARY_DIR}")
+message(STATUS "${err}")

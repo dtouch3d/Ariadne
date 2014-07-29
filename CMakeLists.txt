@@ -22,3 +22,5 @@ enable_testing()
 add_subdirectory(tests)
 
 configure_file(tests/runtest.cmake ${CMAKE_CURRENT_BINARY_DIR}/tests/runtest.cmake COPYONLY)
+execute_process(COMMAND ${CMAKE_COMMAND} -E
+    create_symlink ${PROJECT_SOURCE_DIR}/dynamorio ${PROJECT_BINARY_DIR}/dynamorio)
