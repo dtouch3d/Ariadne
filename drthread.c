@@ -24,7 +24,7 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
                 void* addr = dr_get_proc_address(modhandle, func.name);
                 dr_printf("[+] Found %s @ %p\n", func.name, addr);
                 void (*funcp)() = findfunc(func.name);
-                dr_printf("%s handler is at %p\n", func.name, funcp);
+                dr_printf("[+] %s handler is at %p\n", func.name, funcp);
                 if(funcp != NULL)
                     drwrap_wrap((app_pc)addr, funcp, NULL);
             }
