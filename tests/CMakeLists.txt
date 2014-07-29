@@ -4,6 +4,8 @@ function(add_test_drthread test_name test_src)
         -DTEST_PROG=$<TARGET_FILE:${test_name}>
         -DSRCDIR=${CMAKE_CURRENT_SOURCE_DIR}
         -P ${CMAKE_CURRENT_BINARY_DIR}/runtest.cmake)
+    configure_file("${PROJECT_SOURCE_DIR}/tests/${test_name}.expect"
+                   "${PROJECT_BINARY_DIR}/tests/${test_name}.expect" COPYONLY)
 endfunction(add_test_drthread)
 
 set(CMAKE_BUILD_TYPE "Debug")

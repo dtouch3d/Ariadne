@@ -17,10 +17,21 @@ configure_DynamoRIO_client(drthread)
 use_DynamoRIO_extension(drthread drwrap)
 use_DynamoRIO_extension(drthread drsyms)
 
+execute_process(COMMAND ${CMAKE_COMMAND} -E
+    create_symlink ${PROJECT_SOURCE_DIR}/dynamorio ${PROJECT_BINARY_DIR}/dynamorio)
+
+set(DR_PATH "dynamorio")
+get_property(DRTHREAD_PATH TARGET drthread PROPERTY LOCATION)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    SET(ARCH 64)
+else()
+    set(ARCH 32)
+endif()
+
+configure_file("drthread.sh" "${PROJECT_BINARY_DIR}/drthread.sh")
+
 # Tests
 enable_testing()
 add_subdirectory(tests)
-
 configure_file(tests/runtest.cmake ${CMAKE_CURRENT_BINARY_DIR}/tests/runtest.cmake COPYONLY)
-execute_process(COMMAND ${CMAKE_COMMAND} -E
-    create_symlink ${PROJECT_SOURCE_DIR}/dynamorio ${PROJECT_BINARY_DIR}/dynamorio)
