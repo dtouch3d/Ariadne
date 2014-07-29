@@ -16,3 +16,7 @@ endif(NOT DynamoRIO_FOUND)
 configure_DynamoRIO_client(drthread)
 use_DynamoRIO_extension(drthread drwrap)
 use_DynamoRIO_extension(drthread drsyms)
+
+# Tests
+enable_testing()
+add_subdirectory(tests)
