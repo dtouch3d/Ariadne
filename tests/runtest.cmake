@@ -13,6 +13,9 @@ execute_process(COMMAND ../drthread.sh ${TEST_PROG}
 
 file(READ "${TEST_PROG}.expect" expect)
 
+message(STATUS "expect :: ${expect}")
+message(STATUS "output :: ${output}")
+
 if(NOT "${output}" MATCHES "${expect}")
     message(FATAL_ERROR "Test ${TEST_PROG} Failed!")
 endif()

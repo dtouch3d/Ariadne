@@ -26,5 +26,5 @@ show_linenum(void* wrapcxt, const char* funcname)
     sym.file = file;
 
     drsym_lookup_address(modinfo->full_path, addr-modinfo->start, &sym, DRSYM_DEFAULT_FLAGS);
-    dr_printf("[+] %s at %s:%d\n", funcname, sym.file, sym.line);
+    dr_printf("%s at %s:%d\n", funcname, sym.file, sym.line);
 }
