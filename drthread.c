@@ -46,5 +46,4 @@ dr_init(client_id_t id)
     drsym_init(0);
     dr_register_module_load_event(event_module_load);
     dr_register_exit_event(event_exit);
-
 }

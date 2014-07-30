@@ -4,13 +4,14 @@
 static void
 show_linenum(void* wrapcxt, const char* funcname)
 {
-    app_pc addr = drwrap_get_retaddr(wrapcxt);
+    /* Need to substract to find the call address */
+    app_pc addr = drwrap_get_retaddr(wrapcxt)-sizeof(void*);
     module_data_t* modinfo = dr_lookup_module(addr);
 
     if (modinfo == NULL)
         return;
 
-    /* Stupid approach to ignore calls from other sources */
+    /* Naive approach to ignore calls from other modules */
     const char* appname = dr_get_application_name();
     if (strstr(modinfo->full_path, appname) == NULL)
         return;
@@ -26,5 +27,9 @@ show_linenum(void* wrapcxt, const char* funcname)
     sym.file = file;
 
     drsym_lookup_address(modinfo->full_path, addr-modinfo->start, &sym, DRSYM_DEFAULT_FLAGS);
+
+    /* Should probably check for the existence of symbols
+     * and print hex address otherwise
+     */
     dr_printf("%s at %s:%d\n", funcname, sym.file, sym.line);
 }
