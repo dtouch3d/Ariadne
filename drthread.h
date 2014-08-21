@@ -2,9 +2,17 @@
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 
-typedef struct { char* name; void (*funcptr)(); } symtab_t;
 
 const char* const threadlib[] = { "libpthread" };
+
+typedef struct {
+    unsigned int tid;
+} thread_info_t;
+
+typedef struct {
+    char* name;
+    void (*funcptr)();
+} symtab_t;
 
 /* Table mapping function names to functions. Those
  * function must be defined in their respective header files.
