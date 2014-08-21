@@ -4,7 +4,9 @@
 
 const char* const threadlib[] = { "libpthread" };
 
-static numThreads = 0;
+static num_threads = 0;
+
+void* num_threads_lock;
 
 typedef struct {
     unsigned int tid;
@@ -61,7 +63,19 @@ pthread_create_event(void *wrapcxt, OUT void **user_data)
     show_linenum(wrapcxt, __func__);
 
     app_pc drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t *data = dr_thread_alloc(drcontext, sizeof(thread_info_t));
+
+    thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(thread_info_t));
+
+    dr_set_tls_field(drcontext, thread_info);
+
+    dr_mutex_lock(num_threads_lock);
+    thread_info->tid = num_threads;
+    num_threads++;
+    dr_mutex_unlock(num_threads_lock);
+
+
+    dr_printf("[+] Thread #%d created!\n", thread_info->tid);
+
     return;
 }
 
