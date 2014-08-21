@@ -1,9 +1,10 @@
-#include "pthread_event.h"
+#include "report.h"
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 
-
 const char* const threadlib[] = { "libpthread" };
+
+static numThreads = 0;
 
 typedef struct {
     unsigned int tid;
@@ -13,6 +14,19 @@ typedef struct {
     char* name;
     void (*funcptr)();
 } symtab_t;
+
+
+static void
+pthread_create_event(void *wrapcxt, OUT void **user_data);
+
+static void
+pthread_exit_event(void *wrapcxt, OUT void **user_data);
+
+static void
+pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data);
+
+static void
+pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data);
 
 /* Table mapping function names to functions. Those
  * function must be defined in their respective header files.
@@ -38,4 +52,39 @@ void (*findfunc(const char *name))()
             return symtab[i].funcptr;
     }
     return NULL;
+}
+
+static void
+pthread_create_event(void *wrapcxt, OUT void **user_data)
+{
+    /* pthread_create wrap here */
+    show_linenum(wrapcxt, __func__);
+
+    app_pc drcontext = drwrap_get_drcontext(wrapcxt);
+    thread_info_t *data = dr_thread_alloc(drcontext, sizeof(thread_info_t));
+    return;
+}
+
+static void
+pthread_exit_event(void *wrapcxt, OUT void **user_data)
+{
+    /* pthread_exit wrap here */
+    show_linenum(wrapcxt, __func__);
+    return;
+}
+
+static void
+pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data)
+{
+    /* pthread_mutex_lock wrap here */
+    show_linenum(wrapcxt, __func__);
+    return;
+}
+
+static void
+pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data)
+{
+    /* pthread_mutex_unlock wrap here */
+    show_linenum(wrapcxt, __func__);
+    return;
 }
