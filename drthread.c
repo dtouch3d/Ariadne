@@ -40,6 +40,7 @@ event_exit(void)
 {
     drwrap_exit();
     drsym_exit();
+    dr_mutex_destroy(num_threads_lock);
 }
 
 DR_EXPORT void
