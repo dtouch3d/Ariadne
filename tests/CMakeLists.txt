@@ -17,3 +17,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "suite/tests" PARENT_SCOPE)
 
 add_executable(hello hello.c)
 add_test_drthread(hello hello.c)
+
+add_executable(malloc malloc.c)
+add_test_drthread(malloc malloc.c)

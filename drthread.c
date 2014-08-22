@@ -14,10 +14,10 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
     module_handle_t modhandle = info->handle;
 
     /* We check if a library we want to instrument is loaded from
-     * the global threadlib array at drthread.h */
-    for(i=0; i<SIZE(threadlib); i++)
+     * the global modtable array at drthread.h */
+    for(i=0; i<SIZE(modtable); i++)
     {
-        if(strstr(modname, threadlib[i]) != NULL)
+        if(strstr(modname, modtable[i]) != NULL)
         {
             /*dr_printf("[+] Loaded %s module\n", modname);*/
             for(j=0; j<SIZE(symtab); j++)
@@ -47,8 +47,6 @@ event_thread_init(void* drcontext)
     thread_info->tid = num_threads;
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
-
-    dr_printf("[+] Thread #%d created!\n", thread_info->tid);
 }
 
 static void

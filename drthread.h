@@ -2,18 +2,24 @@
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 
-const char* const threadlib[] = { "libpthread" };
+const char* const modtable[] =
+{
+    "libpthread",
+    "libc"
+};
 
 static int num_threads = 0;
 static int tls_index;
 
 void* num_threads_lock;
 
-typedef struct {
+typedef struct
+{
     unsigned int tid;
 } thread_info_t;
 
-typedef struct {
+typedef struct
+{
     char* name;
     void (*funcptr)();
 } symtab_t;
@@ -31,6 +37,9 @@ pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data);
 static void
 pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data);
 
+static void
+malloc_event(void *wrapcxt, OUT void **user_data);
+
 /* Table mapping function names to functions. Those
  * function must be defined in their respective header files.
  * http://c-faq.com/misc/symtab.html
@@ -41,7 +50,9 @@ static symtab_t symtab[] = {
     "pthread_create",       pthread_create_event,
     "pthread_exit",         pthread_exit_event,
     "pthread_mutex_lock",   pthread_mutex_lock_event,
-    "pthread_mutex_unlock", pthread_mutex_unlock_event
+    "pthread_mutex_unlock", pthread_mutex_unlock_event,
+    /* libc */
+    "malloc" ,              malloc_event
 };
 
 /* XXX: Optimize ? */
@@ -85,6 +96,13 @@ static void
 pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data)
 {
     /* pthread_mutex_unlock wrap here */
+    show_linenum(wrapcxt, __func__);
+    return;
+}
+
+static void
+malloc_event(void *wrapcxt, OUT void **user_data)
+{
     show_linenum(wrapcxt, __func__);
     return;
 }
