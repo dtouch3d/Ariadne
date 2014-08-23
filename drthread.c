@@ -62,6 +62,7 @@ event_exit(void)
     drwrap_exit();
     drmgr_exit();
     drsym_exit();
+    umbra_exit();
     dr_mutex_destroy(num_threads_lock);
 }
 
@@ -71,6 +72,7 @@ dr_init(client_id_t id)
     drwrap_init();
     drmgr_init();
     drsym_init(0);
+    umbra_init();
 
     drmgr_register_module_load_event(event_module_load);
     drmgr_register_thread_init_event(event_thread_init);
