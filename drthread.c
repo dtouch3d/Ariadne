@@ -67,8 +67,17 @@ event_exit(void)
 }
 
 static dr_emit_flags_t
-event_bb(void *drcontext, void *tag, instrlist_t *bb, bool for_trace, bool translating, OUT void **user_data)
+event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
+                bool for_trace, bool translating, void *user_data)
 {
+    if (instr_reads_memory(instr))
+    {
+        dr_printf("[+] Reading memory!\n");
+    }
+    else if (instr_writes_memory(instr))
+    {
+        dr_printf("[+] Writing memory!\n");
+    }
 }
 
 DR_EXPORT void
@@ -82,7 +91,7 @@ dr_init(client_id_t id)
     drmgr_register_module_load_event(event_module_load);
     drmgr_register_thread_init_event(event_thread_init);
     drmgr_register_thread_exit_event(event_thread_exit);
-    drmgr_register_bb_instrumentation_event(event_bb, NULL, NULL);
+    drmgr_register_bb_instrumentation_event(NULL, event_bb_insert, NULL);
 
     dr_register_exit_event(event_exit);
 
