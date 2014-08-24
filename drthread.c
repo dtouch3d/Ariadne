@@ -42,6 +42,8 @@ event_thread_init(void* drcontext)
     thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(*thread_info));
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
+    int os_tid = dr_get_thread_id(drcontext);
+    dr_printf("[+] OS tid: %d\n", os_tid);
 
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
@@ -66,18 +68,29 @@ event_exit(void)
     dr_mutex_destroy(num_threads_lock);
 }
 
+/* Called for every instr on bb */
 static dr_emit_flags_t
 event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 bool for_trace, bool translating, void *user_data)
 {
-    if (instr_reads_memory(instr))
-    {
-        dr_printf("[+] Reading memory!\n");
+    int i;
+    if (instr_get_app_pc(instr) == NULL)
+        return DR_EMIT_DEFAULT;
+    if (instr_reads_memory(instr)) {
+        for (i=0; i<instr_num_srcs(instr); i++) {
+            if (opnd_is_memory_reference(instr_get_src(instr, i))) {
+                /*instrument_mem(drcontext, bb, instr, i, false);*/
+            }
+        }
     }
-    else if (instr_writes_memory(instr))
-    {
-        dr_printf("[+] Writing memory!\n");
+    if (instr_writes_memory(instr)) {
+        for (i=0; i<instr_num_dsts(instr); i++) {
+            if (opnd_is_memory_reference(instr_get_dst(instr, i))) {
+                /*instrument_mem(drcontext, bb, instr, i, true);*/
+            }
+        }
     }
+    return DR_EMIT_DEFAULT;
 }
 
 DR_EXPORT void
