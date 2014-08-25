@@ -22,7 +22,8 @@ typedef struct
 typedef struct
 {
     char* name;
-    void (*funcptr)();
+    void (*pre_func_cb)();
+    void (*post_func_cb)();
 } symtab_t;
 
 typedef struct
@@ -32,7 +33,7 @@ typedef struct
 } malloc_chunk_t;
 
 
-static malloc_chunk_t malloc_chunck_table[MAX_CHUNKS];
+static malloc_chunk_t malloc_chunk_table[MAX_CHUNKS];
 static int num_malloc_chunk;
 void* malloc_chunk_lock;
 
@@ -49,7 +50,10 @@ static void
 pthread_mutex_unlock_event(void *wrapcxt, void **user_data);
 
 static void
-malloc_event(void *wrapcxt, void **user_data);
+malloc_pre_event(void *wrapcxt, void **user_data);
+
+static void
+malloc_post_event(void *wrapcxt, void **user_data);
 
 static void
 show_linenum(void* wrapcxt, const char* funcname);
@@ -61,25 +65,26 @@ show_linenum(void* wrapcxt, const char* funcname);
 
 static symtab_t symtab[] = {
     /* pthread */
-    "pthread_create",       pthread_create_event,
-    "pthread_exit",         pthread_exit_event,
-    "pthread_mutex_lock",   pthread_mutex_lock_event,
-    "pthread_mutex_unlock", pthread_mutex_unlock_event,
+    "pthread_create",       pthread_create_event, NULL,
+    "pthread_exit",         pthread_exit_event, NULL,
+    "pthread_mutex_lock",   pthread_mutex_lock_event, NULL,
+    "pthread_mutex_unlock", pthread_mutex_unlock_event, NULL,
     /* libc */
-    "malloc" ,              malloc_event
+    "malloc" ,              malloc_pre_event, malloc_post_event
 };
 
 /* XXX: Optimize ? */
-void (*findfunc(const char *name))()
+static int
+findfunc(const char *name)
 {
     int i;
 
     for(i=0; i<SIZE(symtab); i++)
     {
         if(strcmp(name, symtab[i].name) == 0)
-            return symtab[i].funcptr;
+            return i;
     }
-    return NULL;
+    return -1;
 }
 
 static void
@@ -115,17 +120,32 @@ pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 }
 
 static void
-malloc_event(void *wrapcxt, void **user_data)
+malloc_pre_event(void *wrapcxt, void **user_data)
 {
     /* TODO: Save arg on user_data and pass to post_cb and save there.
      *       Also check if malloc fails!
      */
-    dr_mutex_lock(malloc_chunk_lock);
-    //malloc_chunk_table[num_malloc_chunk].size = drwrap_get_arg(0);
-    num_malloc_chunk++;
-    dr_mutex_unlock(malloc_chunk_lock);
+
+    *user_data = drwrap_get_arg(wrapcxt, 0);
+
     show_linenum(wrapcxt, __func__);
     return;
+}
+
+static void
+malloc_post_event(void *wrapcxt, void **user_data)
+{
+    app_pc retval = drwrap_get_retval(wrapcxt);
+
+    dr_mutex_lock(malloc_chunk_lock);
+    int chunk_idx = num_malloc_chunk;
+    num_malloc_chunk++;
+    dr_mutex_unlock(malloc_chunk_lock);
+
+    malloc_chunk_table[chunk_idx].addr = retval;
+    malloc_chunk_table[chunk_idx].size = (size_t)*user_data;
+
+    dr_printf("Malloc : addr = %p size = %d\n", retval, *user_data);
 }
 
 

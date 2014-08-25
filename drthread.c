@@ -25,12 +25,17 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
                 symtab_t func = symtab[j];
                 void* addr = dr_get_proc_address(modhandle, func.name);
                 /*dr_printf("[+] Found %s @ %p\n", func.name, addr);*/
-                void (*funcp)() = findfunc(func.name);
+                int index = findfunc(func.name);
+
+                if (index == -1)
+                    return;
+
+                void (*pre_func)() = symtab[index].pre_func_cb;
+                void (*post_func)() = symtab[index].post_func_cb;
                 /*dr_printf("[+] %s handler is at %p\n", func.name, funcp);*/
 
                 /* Calls funcp before actual call */
-                if(funcp != NULL)
-                    drwrap_wrap((app_pc)addr, funcp, NULL);
+                drwrap_wrap((app_pc)addr, pre_func, post_func);
             }
         }
     }
