@@ -1,6 +1,8 @@
 #include "report.h"
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
+#define MAX_LOCKS 10
+#define MAX_CHUNKS 100
 
 const char* const modtable[] =
 {
@@ -10,6 +12,7 @@ const char* const modtable[] =
 
 static int num_threads = 0;
 static int tls_index;
+
 
 void* num_threads_lock;
 
@@ -24,6 +27,16 @@ typedef struct
     void (*funcptr)();
 } symtab_t;
 
+typedef struct
+{
+    void* addr;
+    size_t size;
+} malloc_chunk_t;
+
+
+static malloc_chunk_t malloc_chunck_table[MAX_CHUNKS];
+static int num_malloc_chunk;
+void* malloc_chunk_lock;
 
 static void
 pthread_create_event(void *wrapcxt, OUT void **user_data);
@@ -103,6 +116,13 @@ pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data)
 static void
 malloc_event(void *wrapcxt, OUT void **user_data)
 {
+    /* TODO: Save arg on user_data and pass to post_cb and save there.
+     *       Also check if malloc fails!
+     */
+    dr_mutex_lock(malloc_chunk_lock);
+    //malloc_chunk_table[num_malloc_chunk].size = drwrap_get_arg(0);
+    num_malloc_chunk++;
+    dr_mutex_unlock(malloc_chunk_lock);
     show_linenum(wrapcxt, __func__);
     return;
 }

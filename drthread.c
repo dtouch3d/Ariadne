@@ -109,5 +109,6 @@ dr_init(client_id_t id)
     dr_register_exit_event(event_exit);
 
     num_threads_lock = dr_mutex_create();
+    malloc_chunk_lock = dr_mutex_create();
     tls_index = drmgr_register_tls_field();
 }
