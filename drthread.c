@@ -68,7 +68,22 @@ event_exit(void)
     dr_mutex_destroy(num_threads_lock);
 }
 
+/* Checks wether mem ref is in stack frame aka is local */
+static bool
+opnd_is_stack_addr(void* drcontext, opnd_t opnd)
+{
+    dr_mcontext_t mcontext;
+    mcontext.flags = DR_MC_INTEGER;
+
+    dr_get_mcontext(drcontext, &mcontext);
+
+    app_pc addr = opnd_compute_address(opnd, &mcontext);
+
+    return addr <= (app_pc)mcontext.xsp && addr >= (app_pc)mcontext.xbp;
+}
+
 /* Called for every instr on bb */
+/* TODO: check if in main module */
 static dr_emit_flags_t
 event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 bool for_trace, bool translating, void *user_data)
@@ -78,14 +93,18 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
         return DR_EMIT_DEFAULT;
     if (instr_reads_memory(instr)) {
         for (i=0; i<instr_num_srcs(instr); i++) {
-            if (opnd_is_memory_reference(instr_get_src(instr, i))) {
+            opnd_t opnd = instr_get_src(instr, i);
+            if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
                 /*instrument_mem(drcontext, bb, instr, i, false);*/
+                dr_printf("[+] global memory access!\n");
             }
         }
     }
     if (instr_writes_memory(instr)) {
         for (i=0; i<instr_num_dsts(instr); i++) {
-            if (opnd_is_memory_reference(instr_get_dst(instr, i))) {
+            opnd_t opnd = instr_get_src(instr, i);
+            if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
+                dr_printf("[+] global memory access!\n");
                 /*instrument_mem(drcontext, bb, instr, i, true);*/
             }
         }
