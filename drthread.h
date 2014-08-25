@@ -1,5 +1,3 @@
-#include "report.h"
-
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 #define MAX_LOCKS 10
 #define MAX_CHUNKS 100
@@ -39,19 +37,22 @@ static int num_malloc_chunk;
 void* malloc_chunk_lock;
 
 static void
-pthread_create_event(void *wrapcxt, OUT void **user_data);
+pthread_create_event(void *wrapcxt, void **user_data);
 
 static void
-pthread_exit_event(void *wrapcxt, OUT void **user_data);
+pthread_exit_event(void *wrapcxt, void **user_data);
 
 static void
-pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data);
+pthread_mutex_lock_event(void *wrapcxt, void **user_data);
 
 static void
-pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data);
+pthread_mutex_unlock_event(void *wrapcxt, void **user_data);
 
 static void
-malloc_event(void *wrapcxt, OUT void **user_data);
+malloc_event(void *wrapcxt, void **user_data);
+
+static void
+show_linenum(void* wrapcxt, const char* funcname);
 
 /* Table mapping function names to functions. Those
  * function must be defined in their respective header files.
@@ -82,7 +83,7 @@ void (*findfunc(const char *name))()
 }
 
 static void
-pthread_create_event(void *wrapcxt, OUT void **user_data)
+pthread_create_event(void *wrapcxt, void **user_data)
 {
     /* pthread_create wrap here */
     show_linenum(wrapcxt, __func__);
@@ -90,7 +91,7 @@ pthread_create_event(void *wrapcxt, OUT void **user_data)
 }
 
 static void
-pthread_exit_event(void *wrapcxt, OUT void **user_data)
+pthread_exit_event(void *wrapcxt, void **user_data)
 {
     /* pthread_exit wrap here */
     show_linenum(wrapcxt, __func__);
@@ -98,7 +99,7 @@ pthread_exit_event(void *wrapcxt, OUT void **user_data)
 }
 
 static void
-pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data)
+pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 {
     /* pthread_mutex_lock wrap here */
     show_linenum(wrapcxt, __func__);
@@ -106,7 +107,7 @@ pthread_mutex_lock_event(void *wrapcxt, OUT void **user_data)
 }
 
 static void
-pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data)
+pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 {
     /* pthread_mutex_unlock wrap here */
     show_linenum(wrapcxt, __func__);
@@ -114,7 +115,7 @@ pthread_mutex_unlock_event(void *wrapcxt, OUT void **user_data)
 }
 
 static void
-malloc_event(void *wrapcxt, OUT void **user_data)
+malloc_event(void *wrapcxt, void **user_data)
 {
     /* TODO: Save arg on user_data and pass to post_cb and save there.
      *       Also check if malloc fails!
@@ -125,4 +126,41 @@ malloc_event(void *wrapcxt, OUT void **user_data)
     dr_mutex_unlock(malloc_chunk_lock);
     show_linenum(wrapcxt, __func__);
     return;
+}
+
+
+#define MAX_STR 100
+
+/* funcname is evaluated at compile time with __func__ macro by the caller */
+static void
+show_linenum(void* wrapcxt, const char* funcname)
+{
+    /* Need to substract to find the call address */
+    app_pc addr = drwrap_get_retaddr(wrapcxt)-sizeof(void*);
+    module_data_t* modinfo = dr_lookup_module(addr);
+
+    if (modinfo == NULL)
+        return;
+
+    /* Naive approach to ignore calls from other modules */
+    const char* appname = dr_get_application_name();
+    if (strstr(modinfo->full_path, appname) == NULL)
+        return;
+
+    drsym_info_t sym;
+    char name[MAX_STR];
+    char file[MAX_STR];
+    sym.struct_size = sizeof(sym);
+    sym.name = name;
+
+    sym.name_size = sizeof(name);
+    sym.file_size = sizeof(file);
+    sym.file = file;
+
+    drsym_lookup_address(modinfo->full_path, addr-modinfo->start, &sym, DRSYM_DEFAULT_FLAGS);
+
+    /* Should probably check for the existence of symbols
+     * and print hex address otherwise
+     */
+    dr_printf("%s at %s:%d\n", funcname, sym.file, sym.line);
 }

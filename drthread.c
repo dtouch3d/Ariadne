@@ -96,7 +96,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
             opnd_t opnd = instr_get_src(instr, i);
             if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
                 /*instrument_mem(drcontext, bb, instr, i, false);*/
-                dr_printf("[+] global memory access!\n");
+                /*dr_printf("[+] global memory access!\n");*/
             }
         }
     }
@@ -104,7 +104,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
         for (i=0; i<instr_num_dsts(instr); i++) {
             opnd_t opnd = instr_get_src(instr, i);
             if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
-                dr_printf("[+] global memory access!\n");
+                /*dr_printf("[+] global memory access!\n");*/
                 /*instrument_mem(drcontext, bb, instr, i, true);*/
             }
         }
