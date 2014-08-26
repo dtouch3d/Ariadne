@@ -1,1 +1,5 @@
-pthread_create_event at .*hello.c:20
+pthread_create_event at .*hello.c:19
+pthread_create_event at .*hello.c:19
+pthread_create_event at .*hello.c:19
+pthread_create_event at .*hello.c:19
+pthread_create_event at .*hello.c:19

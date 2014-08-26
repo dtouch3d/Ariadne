@@ -48,7 +48,6 @@ event_thread_init(void* drcontext)
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
     int os_tid = dr_get_thread_id(drcontext);
-    dr_printf("[+] OS tid: %d\n", os_tid);
 
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
