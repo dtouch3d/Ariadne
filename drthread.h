@@ -33,9 +33,9 @@ typedef struct
 } malloc_chunk_t;
 
 
-static malloc_chunk_t malloc_chunk_table[MAX_CHUNKS];
+static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
-void* malloc_chunk_lock;
+void* malloc_table_lock;
 
 static void
 pthread_create_event(void *wrapcxt, void **user_data);
@@ -53,7 +53,7 @@ static void
 malloc_pre_event(void *wrapcxt, void **user_data);
 
 static void
-malloc_post_event(void *wrapcxt, void **user_data);
+malloc_post_event(void *wrapcxt, void *user_data);
 
 static void
 show_linenum(void* wrapcxt, const char* funcname);
@@ -125,27 +125,27 @@ malloc_pre_event(void *wrapcxt, void **user_data)
     /* TODO: Save arg on user_data and pass to post_cb and save there.
      *       Also check if malloc fails!
      */
-
-    //*user_data = drwrap_get_arg(wrapcxt, 0);
+    size_t size = (size_t)drwrap_get_arg(wrapcxt, 0);
+    *user_data = (void*) size;
 
     show_linenum(wrapcxt, __func__);
     return;
 }
 
 static void
-malloc_post_event(void *wrapcxt, void **user_data)
+malloc_post_event(void *wrapcxt, void *user_data)
 {
-    //app_pc retval = drwrap_get_retval(wrapcxt);
+    app_pc retval = drwrap_get_retval(wrapcxt);
 
-/*    dr_mutex_lock(malloc_chunk_lock);*/
-    //int chunk_idx = num_malloc_chunk;
-    //num_malloc_chunk++;
-    //dr_mutex_unlock(malloc_chunk_lock);
+    dr_mutex_lock(malloc_table_lock);
+    int idx = num_malloc_chunk;
+    num_malloc_chunk++;
+    dr_mutex_unlock(malloc_table_lock);
 
-    /*malloc_chunk_table[chunk_idx].addr = retval;*/
-    //malloc_chunk_table[chunk_idx].size = (size_t)*user_data;
+    malloc_table[idx].addr = retval;
+    malloc_table[idx].size = (size_t)user_data;
 
-    //dr_printf("Malloc : addr = %p size = %d\n", retval, *user_data);
+    dr_printf("Malloc : addr = %p size = %d\n", retval, (size_t)user_data);
 }
 
 
