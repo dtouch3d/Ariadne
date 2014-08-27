@@ -116,7 +116,7 @@ static void
 pthread_exit_event(void *wrapcxt, void **user_data)
 {
     /* pthread_exit wrap here */
-    show_linenum(wrapcxt, __func__);
+    //show_linenum(wrapcxt, __func__);
     return;
 }
 
@@ -124,6 +124,14 @@ static void
 pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 {
     /* pthread_mutex_lock wrap here */
+    void* lock = drwrap_get_arg(wrapcxt, 0);
+
+    void* drcontext = drwrap_get_drcontext(wrapcxt);
+    //TODO: Get tls index
+    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    thread_info->lock[thread_info->num_locks] = lock;
+    thread_info->num_locks++;
+
     show_linenum(wrapcxt, __func__);
     return;
 }
@@ -139,9 +147,6 @@ pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 static void
 malloc_pre_event(void *wrapcxt, void **user_data)
 {
-    /* TODO: Save arg on user_data and pass to post_cb and save there.
-     *       Also check if malloc fails!
-     */
     size_t size = (size_t)drwrap_get_arg(wrapcxt, 0);
     *user_data = (void*) size;
 
