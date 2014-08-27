@@ -14,6 +14,7 @@ add_library(drthread SHARED drthread.c)
 find_package(DynamoRIO)
 find_package(DrMemoryFramework)
 
+set(CMAKE_BUILD_TYPE "Debug")
 
 if (NOT DynamoRIO_FOUND)
   message(FATAL_ERROR "DynamoRIO package required to build")
