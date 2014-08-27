@@ -47,12 +47,13 @@ event_thread_init(void* drcontext)
     thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(*thread_info));
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
-    int os_tid = dr_get_thread_id(drcontext);
 
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
+
+    thread_info->num_locks = 0;
 }
 
 static void

@@ -1,12 +1,15 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #define NUM_THREADS	5
 
 void *PrintHello(void *threadid)
 {
    long tid;
    tid = (long)threadid;
+   sleep(1);
    pthread_exit(NULL);
 }
 

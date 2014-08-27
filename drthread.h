@@ -9,14 +9,15 @@ const char* const modtable[] =
 };
 
 static int num_threads = 0;
-static int tls_index;
-
-
 void* num_threads_lock;
+
+static int tls_index;
 
 typedef struct
 {
     unsigned int tid;
+    void* lock[MAX_LOCKS];
+    size_t num_locks;
 } thread_info_t;
 
 typedef struct
@@ -57,6 +58,22 @@ malloc_post_event(void *wrapcxt, void *user_data);
 
 static void
 show_linenum(void* wrapcxt, const char* funcname);
+
+static bool
+in_malloc_chunk(void* addr)
+{
+    dr_mutex_lock(malloc_table_lock);
+    int i;
+    for (i=0; i<num_malloc_chunk; i++)
+    {
+        malloc_chunk_t chunk = malloc_table[i];
+        if (addr >= chunk.addr && addr < chunk.addr + chunk.size)
+            dr_mutex_unlock(malloc_table_lock);
+            return true;
+    }
+    dr_mutex_unlock(malloc_table_lock);
+    return false;
+}
 
 /* Table mapping function names to functions. Those
  * function must be defined in their respective header files.
