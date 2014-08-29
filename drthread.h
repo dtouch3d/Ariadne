@@ -1,5 +1,5 @@
 #define SIZE(A) sizeof(A)/sizeof(A[0])
-#define MAX_LOCKS 10
+#define MAX_LOCKS 100
 #define MAX_CHUNKS 100
 
 const char* const modtable[] =
@@ -127,8 +127,12 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     void* lock = drwrap_get_arg(wrapcxt, 0);
 
     void* drcontext = drwrap_get_drcontext(wrapcxt);
-    //TODO: Get tls index
     thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+
+    /* in "main" */
+    if (thread_info->tid == 0)
+        return;
+
     thread_info->lock[thread_info->num_locks] = lock;
     thread_info->num_locks++;
 
@@ -147,6 +151,14 @@ pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 static void
 malloc_pre_event(void *wrapcxt, void **user_data)
 {
+
+    void* drcontext = drwrap_get_drcontext(wrapcxt);
+    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+
+    /* not in "main" */
+    if (thread_info->tid != 0)
+        return;
+
     size_t size = (size_t)drwrap_get_arg(wrapcxt, 0);
     *user_data = (void*) size;
 
@@ -157,6 +169,13 @@ malloc_pre_event(void *wrapcxt, void **user_data)
 static void
 malloc_post_event(void *wrapcxt, void *user_data)
 {
+    void* drcontext = drwrap_get_drcontext(wrapcxt);
+    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+
+    /* not in "main" */
+    if (thread_info->tid != 0)
+        return;
+
     app_pc retval = drwrap_get_retval(wrapcxt);
 
     dr_mutex_lock(malloc_table_lock);
