@@ -1,6 +1,7 @@
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 #define MAX_LOCKS 100
 #define MAX_CHUNKS 100
+#define MAX_STR 100
 
 const char* const modtable[] =
 {
@@ -190,7 +191,6 @@ malloc_post_event(void *wrapcxt, void *user_data)
 }
 
 
-#define MAX_STR 100
 
 /* funcname is evaluated at compile time with __func__ macro by the caller */
 static void

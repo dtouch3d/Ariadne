@@ -60,6 +60,7 @@ static void
 event_thread_exit(void* drcontext)
 {
     thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     dr_thread_free(drcontext, thread_info, sizeof(*thread_info));
 }
 
