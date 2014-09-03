@@ -5,4 +5,4 @@
 
 DR_OPS=
 
-${PROJECT_BINARY_DIR}/dynamorio/bin@ARCH@/drrun -c @DRTHREAD_PATH@ -- $@
+${PROJECT_BINARY_DIR}/dynamorio/bin@ARCH@/drrun -debug -c @DRTHREAD_PATH@ -- $@
