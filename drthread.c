@@ -79,7 +79,8 @@ static bool
 opnd_is_stack_addr(void* drcontext, opnd_t opnd)
 {
     dr_mcontext_t mcontext;
-    mcontext.flags = DR_MC_INTEGER;
+    mcontext.flags = DR_MC_CONTROL | DR_MC_INTEGER;
+    mcontext.size = sizeof(mcontext);
 
     dr_get_mcontext(drcontext, &mcontext);
 
