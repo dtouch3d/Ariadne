@@ -1,4 +1,4 @@
-DrThread
+Ariadne
 --------
 
 A thread error detector built on top of DynamoRIO.
@@ -13,4 +13,4 @@ make
 How to run
 ----------
 
-./drthread.sh <program> <program parameters>
+./ariadne.sh <program> <program parameters>
