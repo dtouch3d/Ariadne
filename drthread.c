@@ -6,6 +6,8 @@
 
 #include "drthread.h"
 
+static int running_thread = 0;
+
 static void
 event_module_load(void *drcontext, const module_data_t *info, bool loaded)
 {
@@ -44,7 +46,8 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
 static void
 event_thread_init(void* drcontext)
 {
-    thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(*thread_info));
+    thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(thread_info_t));
+    /*thread_info->lock = dr_thread_alloc(drcontext, sizeof(void*)*MAX_LOCKS);*/
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
 
@@ -54,6 +57,24 @@ event_thread_init(void* drcontext)
     dr_mutex_unlock(num_threads_lock);
 
     thread_info->num_locks = 0;
+
+    /*if (thread_info->tid != 0)*/
+    /*{*/
+        /*while (1)*/
+        /*{*/
+            /*dr_sleep(10*1000);*/
+            /*dr_mutex_lock(num_threads_lock);*/
+            /*if (running_thread == 0)*/
+            /*{*/
+                /*running_thread = thread_info->tid;*/
+                /*dr_mutex_unlock(num_threads_lock);*/
+                /*return;*/
+            /*}*/
+            /*dr_mutex_unlock(num_threads_lock);*/
+        /*}*/
+    /*}*/
+
+
 }
 
 static void
@@ -61,7 +82,15 @@ event_thread_exit(void* drcontext)
 {
     thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
-    dr_thread_free(drcontext, thread_info, sizeof(*thread_info));
+    /*dr_thread_free(drcontext, thread_info->lock, MAX_LOCKS);*/
+    dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
+
+    if (thread_info->tid != 0)
+    {
+        dr_mutex_lock(num_threads_lock);
+        running_thread = 0;
+        dr_mutex_unlock(num_threads_lock);
+    }
 }
 
 static void
@@ -72,6 +101,7 @@ event_exit(void)
     drmgr_exit();
     /*umbra_exit();*/
     dr_mutex_destroy(num_threads_lock);
+    dr_mutex_destroy(malloc_table_lock);
 }
 
 /* Checks wether mem ref is in stack frame aka is local */

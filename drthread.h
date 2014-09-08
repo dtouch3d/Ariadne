@@ -3,14 +3,14 @@
 #define MAX_CHUNKS 100
 #define MAX_STR 100
 
-const char* const modtable[] =
+static char* const modtable[] =
 {
     "libpthread",
     "libc"
 };
 
 static int num_threads = 0;
-void* num_threads_lock;
+static void* num_threads_lock;
 
 static int tls_index;
 
@@ -37,7 +37,7 @@ typedef struct
 
 static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
-void* malloc_table_lock;
+static void* malloc_table_lock;
 
 static void
 pthread_create_event(void *wrapcxt, void **user_data);
