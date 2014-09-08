@@ -4,7 +4,7 @@
 #include "drmgr.h"
 #include <string.h>
 
-#include "drthread.h"
+#include "ariadne.h"
 
 static int running_thread = 0;
 
@@ -16,7 +16,7 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
     module_handle_t modhandle = info->handle;
 
     /* We check if a library we want to instrument is loaded from
-     * the global modtable array at drthread.h */
+     * the global modtable array at ariadne.h */
     for(i=0; i<SIZE(modtable); i++)
     {
         if(strstr(modname, modtable[i]) != NULL)

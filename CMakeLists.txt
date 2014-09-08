@@ -10,24 +10,24 @@ if (NOT DEFINED DrMemoryFramework_DIR)
       "DrMemory Framework directory")
 endif (NOT DEFINED DrMemoryFramework_DIR)
 
-add_library(drthread SHARED drthread.c)
+add_library(ariadne SHARED ariadne.c)
 find_package(DynamoRIO)
 find_package(DrMemoryFramework)
 
 if (NOT DynamoRIO_FOUND)
   message(FATAL_ERROR "DynamoRIO package required to build")
 endif(NOT DynamoRIO_FOUND)
-configure_DynamoRIO_client(drthread)
-#use_DynamoRIO_extension(drthread umbra)
-use_DynamoRIO_extension(drthread drwrap)
-use_DynamoRIO_extension(drthread drsyms)
-use_DynamoRIO_extension(drthread drmgr)
+configure_DynamoRIO_client(ariadne)
+#use_DynamoRIO_extension(ariadne umbra)
+use_DynamoRIO_extension(ariadne drwrap)
+use_DynamoRIO_extension(ariadne drsyms)
+use_DynamoRIO_extension(ariadne drmgr)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E
     create_symlink ${PROJECT_SOURCE_DIR}/dynamorio ${PROJECT_BINARY_DIR}/dynamorio)
 
 set(DR_PATH "dynamorio")
-get_property(DRTHREAD_PATH TARGET drthread PROPERTY LOCATION)
+get_property(DRTHREAD_PATH TARGET ariadne PROPERTY LOCATION)
 get_property(UMBRA_PATH TARGET umbra PROPERTY LOCATION)
 
 FILE(COPY "${UMBRA_PATH}" DESTINATION "${PROJECT_BINARY_DIR}")
@@ -38,7 +38,7 @@ else()
     set(ARCH 32)
 endif()
 
-configure_file("drthread.sh" "${PROJECT_BINARY_DIR}/drthread.sh")
+configure_file("ariadne.sh" "${PROJECT_BINARY_DIR}/ariadne.sh")
 
 # Tests
 enable_testing()

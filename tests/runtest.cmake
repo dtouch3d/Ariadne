@@ -6,7 +6,7 @@
 message(STATUS "${TEST_PROG} ::: ${SRCDIR}")
 
 # TODO: Args ?
-execute_process(COMMAND ../drthread.sh ${TEST_PROG}
+execute_process(COMMAND ../ariadne.sh ${TEST_PROG}
     RESULT_VARIABLE result
     OUTPUT_VARIABLE output
     ERROR_VARIABLE err)
