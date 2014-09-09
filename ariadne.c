@@ -92,18 +92,6 @@ event_thread_exit(void* drcontext)
         dr_mutex_unlock(num_threads_lock);
     }
 }
-
-static void
-event_exit(void)
-{
-    drwrap_exit();
-    drsym_exit();
-    drmgr_exit();
-    /*umbra_exit();*/
-    dr_mutex_destroy(num_threads_lock);
-    dr_mutex_destroy(malloc_table_lock);
-}
-
 /* Checks wether mem ref is in stack frame aka is local */
 static bool
 opnd_is_stack_addr(void* drcontext, opnd_t opnd)
@@ -148,6 +136,18 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
     }
     return DR_EMIT_DEFAULT;
 }
+
+static void
+event_exit(void)
+{
+    drwrap_exit();
+    drsym_exit();
+    drmgr_exit();
+    /*umbra_exit();*/
+    dr_mutex_destroy(num_threads_lock);
+    dr_mutex_destroy(malloc_table_lock);
+}
+
 
 DR_EXPORT void
 dr_init(client_id_t id)
