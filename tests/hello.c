@@ -9,12 +9,13 @@ void *PrintHello(void *threadid)
 {
    long tid;
    tid = (long)threadid;
-   sleep(1);
+   printf("Hello from thread #%lu\n", tid);
    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[])
 {
+    setbuf(stdout, NULL);
    pthread_t threads[NUM_THREADS];
    int rc;
    long t;
