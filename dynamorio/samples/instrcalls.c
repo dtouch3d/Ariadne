@@ -1,23 +1,23 @@
 /* **********************************************************
- * Copyright (c) 2012-2013 Google, Inc.  All rights reserved.
+ * Copyright (c) 2012-2014 Google, Inc.  All rights reserved.
  * Copyright (c) 2002-2010 VMware, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -55,6 +55,7 @@
 #ifdef SHOW_SYMBOLS
 # include "drsyms.h"
 #endif
+#include "utils.h"
 
 static void event_exit(void);
 static void event_thread_init(void *drcontext);
@@ -64,9 +65,11 @@ static dr_emit_flags_t event_basic_block(void *drcontext, void *tag, instrlist_t
 
 static client_id_t my_id;
 
-DR_EXPORT void 
+DR_EXPORT void
 dr_init(client_id_t id)
 {
+    dr_set_client_name("DynamoRIO Sample Client 'instrcalls'",
+                       "http://dynamorio.org/issues");
     my_id = id;
     /* make it easy to tell, by looking at log file, which client executed */
     dr_log(NULL, LOG_ALL, 1, "Client 'instrcalls' initializing\n");
@@ -111,39 +114,27 @@ static void
 event_thread_init(void *drcontext)
 {
     file_t f;
-    char logname[512];
-    char *dirsep;
-    int len;
     /* We're going to dump our data to a per-thread file.
      * On Windows we need an absolute path so we place it in
      * the same directory as our library. We could also pass
      * in a path and retrieve with dr_get_options().
      */
-    len = dr_snprintf(logname, sizeof(logname)/sizeof(logname[0]),
-                      "%s", dr_get_client_path(my_id));
-    DR_ASSERT(len > 0);
-    for (dirsep = logname + len; *dirsep != '/' IF_WINDOWS(&& *dirsep != '\\'); dirsep--)
-        DR_ASSERT(dirsep > logname);
-    len = dr_snprintf(dirsep + 1,
-                      (sizeof(logname)-(dirsep-logname))/sizeof(logname[0]) - 1,
-                      "instrcalls.%d.log", dr_get_thread_id(drcontext));
-    DR_ASSERT(len > 0);
-    logname[sizeof(logname)/sizeof(logname[0])-1] = '\0';
-    f = dr_open_file(logname, DR_FILE_WRITE_OVERWRITE);
+    f = log_file_open(my_id, drcontext, NULL /* client lib path */,
+                      "instrcalls",
+#ifndef WINDOWS
+                      DR_FILE_CLOSE_ON_FORK |
+#endif
+                      DR_FILE_ALLOW_LARGE);
     DR_ASSERT(f != INVALID_FILE);
 
     /* store it in the slot provided in the drcontext */
     dr_set_tls_field(drcontext, (void *)(ptr_uint_t)f);
-    dr_log(drcontext, LOG_ALL, 1, 
-           "instrcalls: log for thread %d is instrcalls.%03d\n",
-           dr_get_thread_id(drcontext), dr_get_thread_id(drcontext));
 }
 
 static void
 event_thread_exit(void *drcontext)
 {
-    file_t f = (file_t)(ptr_uint_t) dr_get_tls_field(drcontext);
-    dr_close_file(f);
+    log_file_close((file_t)(ptr_uint_t) dr_get_tls_field(drcontext));
 }
 
 #ifdef SHOW_SYMBOLS
@@ -226,7 +217,7 @@ at_return(app_pc instr_addr, app_pc target_addr)
 #endif
 }
 
-static dr_emit_flags_t 
+static dr_emit_flags_t
 event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
                   bool for_trace, bool translating)
 {
@@ -237,8 +228,8 @@ event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
     instrlist_disassemble(drcontext, tag, bb, STDOUT);
 # endif
 #endif
-    for (instr = instrlist_first(bb); instr != NULL; instr = next_instr) {
-        next_instr = instr_get_next(instr);
+    for (instr = instrlist_first_app(bb); instr != NULL; instr = next_instr) {
+        next_instr = instr_get_next_app(instr);
         if (!instr_opcode_valid(instr))
             continue;
         /* instrument calls and returns -- ignore far calls/rets */

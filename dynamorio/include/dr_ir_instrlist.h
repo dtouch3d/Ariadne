@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,11 +48,11 @@ instrlist_t*
 instrlist_create(void *drcontext);
 
 /** Initializes \p ilist. */
-void 
+void
 instrlist_init(instrlist_t *ilist);
 
 /** Deallocates the thread-local heap storage for \p ilist. */
-void 
+void
 instrlist_destroy(void *drcontext, instrlist_t *ilist);
 
 /** Frees the instructions in \p ilist. */
@@ -63,7 +63,7 @@ instrlist_clear(void *drcontext, instrlist_t *ilist);
 void
 instrlist_clear_and_destroy(void *drcontext, instrlist_t *ilist);
 
-/** 
+/**
  * All future instructions inserted into \p ilist that do not have raw bits
  * will have instr_set_translation() called with \p pc as the target.
  * This is a convenience routine to make it easy to have the same
@@ -82,19 +82,35 @@ instrlist_get_translation_target(instrlist_t *ilist);
 instr_t*
 instrlist_first(instrlist_t *ilist);
 
+/**
+ * Returns the first application (non-meta) instruction in the instruction list
+ * \p ilist.
+ *
+ * \note All preceding meta instructions will be skipped.
+ *
+ * \note We do recommend using this routine during the phase of application
+ * code analysis, as any non-app instructions present are guaranteed to be ok
+ * to skip.
+ * However, the caution should be exercised if using this routine after any
+ * instrumentation insertion has already happened, as instrumentation might
+ * affect register usage or other factors being analyzed.
+ */
+instr_t *
+instrlist_first_app(instrlist_t *ilist);
+
 /** Returns the last instr_t in \p ilist. */
 instr_t*
 instrlist_last(instrlist_t *ilist);
 
 /** Adds \p instr to the end of \p ilist. */
-void 
+void
 instrlist_append(instrlist_t *ilist, instr_t *instr);
 
 /** Adds \p instr to the front of \p ilist. */
-void 
+void
 instrlist_prepend(instrlist_t *ilist, instr_t *instr);
 
-/** 
+/**
  * Allocates a new instrlist_t and for each instr_t in \p old allocates
  * a new instr_t using instr_clone to produce a complete copy of \p old.
  * Each operand that is opnd_is_instr() has its target updated
@@ -106,11 +122,11 @@ instrlist_t*
 instrlist_clone(void *drcontext, instrlist_t *old);
 
 /** Inserts \p instr into \p ilist prior to \p where. */
-void   
+void
 instrlist_preinsert(instrlist_t *ilist, instr_t *where, instr_t *instr);
 
 /** Inserts \p instr into \p ilist after \p where. */
-void   
+void
 instrlist_postinsert(instrlist_t *ilist, instr_t *where, instr_t *instr);
 
 /** Replaces \p oldinst with \p newinst in \p ilist (does not destroy \p oldinst). */
@@ -118,13 +134,13 @@ instr_t*
 instrlist_replace(instrlist_t *ilist, instr_t *oldinst, instr_t *newinst);
 
 /** Removes (does not destroy) \p instr from \p ilist. */
-void   
+void
 instrlist_remove(instrlist_t *ilist, instr_t *instr);
 
 /**
- * Specifies the fall-through target of a basic block if its last 
- * instruction is a conditional branch instruction. 
- * It can only be called in basic block building event callbacks 
+ * Specifies the fall-through target of a basic block if its last
+ * instruction is a conditional branch instruction.
+ * It can only be called in basic block building event callbacks
  * when the \p for_trace parameter is false,
  * and has NO EFFECT in other cases.
  */
@@ -132,8 +148,8 @@ bool
 instrlist_set_fall_through_target(instrlist_t *bb, app_pc tgt);
 
 /**
- * Specifies the return target of a basic block if its last 
- * instruction is a call instruction. 
+ * Specifies the return target of a basic block if its last
+ * instruction is a call instruction.
  * It can only be called in basic block building event callbacks
  * when the \p for_trace parameter is false,
  * and has NO EFFECT in other cases.
@@ -142,7 +158,7 @@ bool
 instrlist_set_return_target(instrlist_t *bb, app_pc tgt);
 
 
-/** 
+/**
  * Encodes each instruction in \p ilist in turn in contiguous memory starting
  * at \p pc.  Returns the pc after all of the encodings, or NULL if any one
  * of the encodings failed.
@@ -159,7 +175,7 @@ byte *
 instrlist_encode(void *drcontext, instrlist_t *ilist, byte *pc,
                  bool has_instr_jmp_targets);
 
-/** 
+/**
  * Encodes each instruction in \p ilist in turn in contiguous memory
  * starting \p copy_pc in preparation for copying to \p final_pc.  Any
  * pc-relative instruction is encoded as though the instruction list were

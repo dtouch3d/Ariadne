@@ -5,6 +5,7 @@ var struct__drsym__info__t =
     [ "file", "struct__drsym__info__t.html#a41e7edd37b30dc6bee532788d36d4729", null ],
     [ "file_available_size", "struct__drsym__info__t.html#a2e0a7c0b2e1e9aaccce37c84f06e26cb", null ],
     [ "file_size", "struct__drsym__info__t.html#a480117e58d4baf4d666410eace77b888", null ],
+    [ "flags", "struct__drsym__info__t.html#accaf16647311e68626f41be371c02c4b", null ],
     [ "line", "struct__drsym__info__t.html#aaa74a4e9b5a672f2c2b8f6a375ae4602", null ],
     [ "line_offs", "struct__drsym__info__t.html#ae05de8b3cf18dfc8b3229342f66bfd05", null ],
     [ "name", "struct__drsym__info__t.html#aef01d2677a26a79cff6377a3f6b50e50", null ],

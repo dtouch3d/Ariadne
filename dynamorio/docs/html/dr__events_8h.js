@@ -8,10 +8,28 @@ var dr__events_8h =
     [ "dr_fault_fragment_info_t", "dr__events_8h.html#aef4b133cb2bf598ee968170d982c4e62", null ],
     [ "dr_restore_state_info_t", "dr__events_8h.html#a19a4bd60d7607be81d77f466fd8d7f49", null ],
     [ "dr_siginfo_t", "dr__events_8h.html#ab49900139eb46d5dde3b2b69c175c072", null ],
-    [ "dr_custom_trace_action_t", "dr__events_8h.html#a4982c54b45ecb525aec1be6b00a9664a", null ],
-    [ "dr_emit_flags_t", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209", null ],
-    [ "dr_exit_flags_t", "dr__events_8h.html#ae2ea678cffff98daafd5aac5bdb65080", null ],
-    [ "dr_signal_action_t", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33", null ],
+    [ "dr_custom_trace_action_t", "dr__events_8h.html#a4982c54b45ecb525aec1be6b00a9664a", [
+      [ "CUSTOM_TRACE_DR_DECIDES", "dr__events_8h.html#a4982c54b45ecb525aec1be6b00a9664aa8c4cae03ea754b127fb9398282936c2a", null ],
+      [ "CUSTOM_TRACE_END_NOW", "dr__events_8h.html#a4982c54b45ecb525aec1be6b00a9664aacfdfb736c87eb9e0694f92434ae87ce5", null ],
+      [ "CUSTOM_TRACE_CONTINUE", "dr__events_8h.html#a4982c54b45ecb525aec1be6b00a9664aa0dcf53baa29758415ba0d5948c4b4914", null ]
+    ] ],
+    [ "dr_emit_flags_t", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209", [
+      [ "DR_EMIT_DEFAULT", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209a7d25c4546544d1a8c0b77c69230772eb", null ],
+      [ "DR_EMIT_STORE_TRANSLATIONS", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209a80b741b6a35dc7424940a873bfee2ced", null ],
+      [ "DR_EMIT_PERSISTABLE", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209a8c6fbffdec0fe74acaf82d530ae03b00", null ],
+      [ "DR_EMIT_MUST_END_TRACE", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209a9e7a77890e426d1b88e02f29b8433a12", null ],
+      [ "DR_EMIT_GO_NATIVE", "dr__events_8h.html#a689518ac5d1ad136b13e03012702b209a184a564eaa6cee9890f98f8a2d1c9c89", null ]
+    ] ],
+    [ "dr_exit_flags_t", "dr__events_8h.html#ae2ea678cffff98daafd5aac5bdb65080", [
+      [ "DR_EXIT_MULTI_THREAD", "dr__events_8h.html#ae2ea678cffff98daafd5aac5bdb65080a0bd2d4f65566a9c5a9cb6dcf649e5eb8", null ],
+      [ "DR_EXIT_SKIP_THREAD_EXIT", "dr__events_8h.html#ae2ea678cffff98daafd5aac5bdb65080ad0a85f8d8abbc6892c31f0b07d1f93aa", null ]
+    ] ],
+    [ "dr_signal_action_t", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33", [
+      [ "DR_SIGNAL_DELIVER", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33a45815215e4567ecfbe504d5bb7ab01bf", null ],
+      [ "DR_SIGNAL_SUPPRESS", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33aeb1a9eb7969b688a26e6e06fef4c6973", null ],
+      [ "DR_SIGNAL_BYPASS", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33a0c437214d4411687fe54ad8bb93399a1", null ],
+      [ "DR_SIGNAL_REDIRECT", "dr__events_8h.html#af86ce68b89c76d46c92d36e58ddb7a33a866dcc1af9f9076edcbed9c8afb17e93", null ]
+    ] ],
     [ "dr_fragment_persistable", "dr__events_8h.html#ac8f13d88a973780babf7fd223ffe8cb6", null ],
     [ "dr_is_nudge_thread", "dr__events_8h.html#a2ef0822d6e77a04938787cf398992592", null ],
     [ "dr_nudge_client", "dr__events_8h.html#a9d11fb8fbffdcb0cb6e7b87f804cb459", null ],

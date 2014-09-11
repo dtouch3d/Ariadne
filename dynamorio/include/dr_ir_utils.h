@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -126,26 +126,26 @@ typedef enum {
 } dr_spill_slot_t;
 
 
-/** 
+/**
  * Inserts into \p ilist prior to \p where meta-instruction(s) to save the
  * register \p reg in the spill slot \p slot.  See dr_restore_reg(). Use
  * dr_read_saved_reg() and dr_write_saved_reg() to access spill slots from clean
  * calls and restore_state_events (see dr_register_restore_state_event()).
  * \note The stored value remains available only until the next non-meta (i.e.
- * application) instruction. Use dr_insert_write_tls_field() and 
+ * application) instruction. Use dr_insert_write_tls_field() and
  * dr_insert_read_tls_field() for a persistent (but more costly to access)
  * thread-local-storage location.  See also dr_raw_tls_calloc().
  */
-void 
+void
 dr_save_reg(void *drcontext, instrlist_t *ilist, instr_t *where, reg_id_t reg,
             dr_spill_slot_t slot);
 
-/** 
- * Inserts into \p ilist prior to \p where meta-instruction(s) to restore the 
+/**
+ * Inserts into \p ilist prior to \p where meta-instruction(s) to restore the
  * register \p reg from the spill slot \p slot.  See dr_save_reg() for notes on
  * lifetime and alternative access to spill slots.
  */
-void 
+void
 dr_restore_reg(void *drcontext, instrlist_t *ilist, instr_t *where, reg_id_t reg,
                dr_spill_slot_t slot);
 
@@ -173,10 +173,10 @@ reg_t
 dr_read_saved_reg(void *drcontext, dr_spill_slot_t slot);
 
 /**
- * Can be used from a clean call to modify the value saved in the spill slot 
+ * Can be used from a clean call to modify the value saved in the spill slot
  * \p slot by dr_save_reg() such that a later dr_restore_reg() will see the
  * new value.
- * 
+ *
  * \note This routine should only be used during a clean call out of the
  * cache.  Use at any other time could corrupt application or DynamoRIO
  * state.
@@ -184,7 +184,7 @@ dr_read_saved_reg(void *drcontext, dr_spill_slot_t slot);
 void
 dr_write_saved_reg(void *drcontext, dr_spill_slot_t slot, reg_t value);
 
-/** 
+/**
  * Inserts into \p ilist prior to \p where meta-instruction(s) to save the 6
  * arithmetic flags into xax after first saving xax to the spill slot \p slot.
  * This is equivalent to dr_save_reg() of xax to \p slot followed by lahf and
@@ -198,11 +198,11 @@ dr_write_saved_reg(void *drcontext, dr_spill_slot_t slot, reg_t value);
  * \deprecated This routine is equivalent to dr_save_reg() followed by
  * dr_save_arith_flags_to_xax().
  */
-void 
+void
 dr_save_arith_flags(void *drcontext, instrlist_t *ilist, instr_t *where,
                     dr_spill_slot_t slot);
 
-/** 
+/**
  * Inserts into \p ilist prior to \p where meta-instruction(s) to restore the 6
  * arithmetic flags, assuming they were saved using dr_save_arith_flags() with
  * slot \p slot and that xax holds the same value it did after the save.
@@ -210,7 +210,7 @@ dr_save_arith_flags(void *drcontext, instrlist_t *ilist, instr_t *where,
  * \deprecated This routine is equivalent to dr_restore_arith_flags_from_xax()
  * followed by dr_restore_reg().
  */
-void 
+void
 dr_restore_arith_flags(void *drcontext, instrlist_t *ilist, instr_t *where,
                        dr_spill_slot_t slot);
 
@@ -227,7 +227,7 @@ dr_restore_arith_flags(void *drcontext, instrlist_t *ilist, instr_t *where,
  * \warning Clobbers xax; the caller must ensure xax is dead or saved at
  * \p where.
  */
-void 
+void
 dr_save_arith_flags_to_xax(void *drcontext, instrlist_t *ilist, instr_t *where);
 
 /**
@@ -237,7 +237,7 @@ dr_save_arith_flags_to_xax(void *drcontext, instrlist_t *ilist, instr_t *where);
  * ensure that xax contains the arithmetic flags, most likely from
  * dr_save_arith_flags_to_xax().
  */
-void 
+void
 dr_restore_arith_flags_from_xax(void *drcontext, instrlist_t *ilist, instr_t *where);
 
 /**
@@ -259,7 +259,7 @@ dr_insert_write_tls_field(void *drcontext, instrlist_t *ilist, instr_t *where,
                           reg_id_t reg);
 
 /** Inserts \p instr as a non-application instruction into \p ilist prior to \p where. */
-void 
+void
 instrlist_meta_preinsert(instrlist_t *ilist, instr_t *where, instr_t *instr);
 
 /** Inserts \p instr as a non-application instruction into \p ilist after \p where. */
@@ -272,16 +272,16 @@ instrlist_meta_append(instrlist_t *ilist, instr_t *instr);
 
 /**
  * Inserts \p instr as a non-application instruction that can fault (see
- * instr_set_meta_may_fault()) into \p ilist prior to \p where. 
+ * instr_set_meta_may_fault()) into \p ilist prior to \p where.
  *
  * \deprecated Essentially equivalent to instrlist_meta_preinsert()
  */
-void 
+void
 instrlist_meta_fault_preinsert(instrlist_t *ilist, instr_t *where, instr_t *instr);
 
 /**
  * Inserts \p instr as a non-application instruction that can fault (see
- * instr_set_meta_may_fault()) into \p ilist after \p where. 
+ * instr_set_meta_may_fault()) into \p ilist after \p where.
  *
  * \deprecated Essentially equivalent to instrlist_meta_postinsert()
  */
@@ -290,7 +290,7 @@ instrlist_meta_fault_postinsert(instrlist_t *ilist, instr_t *where, instr_t *ins
 
 /**
  * Inserts \p instr as a non-application instruction that can fault (see
- * instr_set_meta_may_fault()) onto the end of \p ilist. 
+ * instr_set_meta_may_fault()) onto the end of \p ilist.
  *
  * \deprecated Essentially equivalent to instrlist_meta_append()
  */
@@ -364,7 +364,7 @@ instrlist_meta_fault_append(instrlist_t *ilist, instr_t *instr);
  * \note Arguments that reference sub-register portions of DR_REG_XSP are
  * not supported (full DR_REG_XSP is supported).
  */
-void 
+void
 dr_insert_clean_call(void *drcontext, instrlist_t *ilist, instr_t *where,
                      void *callee, bool save_fpstate, uint num_args, ...);
 /**
@@ -407,7 +407,7 @@ typedef enum {
  * mind that any register that is not saved will not be present in a
  * context obtained from dr_get_mcontext().
  */
-void 
+void
 dr_insert_clean_call_ex(void *drcontext, instrlist_t *ilist, instr_t *where,
                         void *callee, dr_cleancall_save_t save_flags,
                         uint num_args, ...);
@@ -469,7 +469,7 @@ dr_insert_clean_call_ex(void *drcontext, instrlist_t *ilist, instr_t *where,
  *
  * \note Arguments that reference DR_REG_XSP are not supported in 64-bit mode.
  */
-void 
+void
 dr_insert_call(void *drcontext, instrlist_t *ilist, instr_t *where,
                void *callee, uint num_args, ...);
 
@@ -510,11 +510,11 @@ dr_insert_call_ex(void *drcontext, instrlist_t *ilist, instr_t *where,
 uint
 dr_prepare_for_call(void *drcontext, instrlist_t *ilist, instr_t *instr);
 
-/** 
+/**
  * Inserts into \p ilist prior to \p where meta-instruction(s) to restore state
  * after a call.
  */
-void 
+void
 dr_cleanup_after_call(void *drcontext, instrlist_t *ilist, instr_t *where,
                       uint sizeof_param_area);
 
@@ -537,13 +537,25 @@ void
 dr_restore_app_stack(void *drcontext, instrlist_t *ilist, instr_t *where);
 
 /**
+ * Calls the specified function \p func after switching to the DR stack
+ * for the thread corresponding to \p drcontext.
+ * Passes in 8 arguments.  Uses the C calling convention, so \p func will work
+ * just fine even if if takes fewer than 8 args.
+ * Swaps the stack back upon return and returns the value returned by \p func.
+ */
+void *
+dr_call_on_clean_stack(void *drcontext, void *(*func)(void),
+                       void *arg1, void *arg2, void *arg3, void *arg4,
+                       void *arg5, void *arg6, void *arg7, void *arg8);
+
+/**
  * Assumes that \p instr is a near call.
  * Inserts into \p ilist prior to \p instr instruction(s) to call callee passing
  * two arguments:
  * -# address of call instruction (caller)
  * -# target address of call (callee)
  */
-void 
+void
 dr_insert_call_instrumentation(void *drcontext, instrlist_t *ilist,
                                instr_t *instr, void *callee);
 
@@ -557,7 +569,7 @@ dr_insert_call_instrumentation(void *drcontext, instrlist_t *ilist,
  * \note \p scratch_slot must be <= dr_max_opnd_accessible_spill_slot(). \p scratch_slot
  * is used internally to this routine and will be clobbered.
  */
-void 
+void
 dr_insert_mbr_instrumentation(void *drcontext, instrlist_t *ilist,
                               instr_t *instr, void *callee, dr_spill_slot_t scratch_slot);
 
@@ -569,9 +581,24 @@ dr_insert_mbr_instrumentation(void *drcontext, instrlist_t *ilist,
  * -# target address of branch
  * -# 0 if the branch is not taken, 1 if it is taken
  */
-void 
+void
 dr_insert_cbr_instrumentation(void *drcontext, instrlist_t *ilist,
                               instr_t *instr, void *callee);
+
+/**
+ * Assumes that \p instr is a conditional branch
+ * Inserts into \p ilist prior to \p instr instruction(s) to call callee passing
+ * four arguments:
+ * -# address of branch instruction
+ * -# target address of branch
+ * -# fall-through address of branch
+ * -# 0 if the branch is not taken, 1 if it is taken
+ * -# user defined operand (e.g., TLS slot, immed value, register, etc.)
+ * \note The user defined operand cannot use register ebx!
+ */
+void
+dr_insert_cbr_instrumentation_ex(void *drcontext, instrlist_t *ilist,
+                                 instr_t *instr, void *callee, opnd_t user_data);
 
 /**
  * Assumes that \p instr is a direct, near, unconditional branch.
@@ -583,7 +610,7 @@ dr_insert_cbr_instrumentation(void *drcontext, instrlist_t *ilist,
  * \warning Basic block eliding is controlled by -max_elide_jmp.  If that
  * option is set to non-zero, ubrs may never be seen.
  */
-void 
+void
 dr_insert_ubr_instrumentation(void *drcontext, instrlist_t *ilist,
                               instr_t *instr, void *callee);
 
@@ -601,13 +628,13 @@ dr_insert_ubr_instrumentation(void *drcontext, instrlist_t *ilist,
  *
  * \return whether successful.
  */
-bool 
+bool
 dr_clobber_retaddr_after_read(void *drcontext, instrlist_t *ilist, instr_t *instr,
                               ptr_uint_t value);
 
 /**
  * Returns true if the xmm0 through xmm5 for Windows, or xmm0 through
- * xmm15 for 64-bit Linux, or xmm0 through xmm7 for 32-bit Linux, 
+ * xmm15 for 64-bit Linux, or xmm0 through xmm7 for 32-bit Linux,
  * fields in dr_mcontext_t are valid for this process
  * (i.e., whether this process is 64-bit or WOW64, and the processor
  * supports SSE).
@@ -623,9 +650,9 @@ dr_mcontext_xmm_fields_valid(void);
  * by the \p flags field of \p context into \p context.
  *
  * This routine may only be called from:
- * - A clean call invoked by dr_insert_clean_call() or dr_prepare_for_call() 
- * - A pre- or post-syscall event (dr_register_pre_syscall_event(), 
- *   dr_register_post_syscall_event()) 
+ * - A clean call invoked by dr_insert_clean_call() or dr_prepare_for_call()
+ * - A pre- or post-syscall event (dr_register_pre_syscall_event(),
+ *   dr_register_post_syscall_event())
  * - Basic block or trace creation events (dr_register_bb_event(),
  *   dr_register_trace_event()), but for basic block creation only when the
  *   basic block callback parameters \p for_trace and \p translating are
@@ -676,9 +703,9 @@ dr_get_mcontext(void *drcontext, dr_mcontext_t *context);
  * flags field of \p context to the values in \p context.
  *
  * This routine may only be called from:
- * - A clean call invoked by dr_insert_clean_call() or dr_prepare_for_call() 
- * - A pre- or post-syscall event (dr_register_pre_syscall_event(), 
- *   dr_register_post_syscall_event()) 
+ * - A clean call invoked by dr_insert_clean_call() or dr_prepare_for_call()
+ * - A pre- or post-syscall event (dr_register_pre_syscall_event(),
+ *   dr_register_post_syscall_event())
  *   dr_register_thread_exit_event())
  * - Basic block or trace creation events (dr_register_bb_event(),
  *   dr_register_trace_event()), but for basic block creation only when the
@@ -771,6 +798,30 @@ dr_redirect_execution(dr_mcontext_t *context);
  */
 byte *
 dr_redirect_native_target(void *drcontext);
+#ifdef WINDOWS
+
+
+/**
+ * Copies the machine state in \p src into \p dst.  Sets the \p
+ * ContextFlags field of \p dst to reflect the \p flags field of \p
+ * src.
+ *
+ * It is up to the caller to ensure that \p dst is allocated and
+ * initialized properly in order to contain multimedia processor
+ * state, if DR_MC_MULTIMEDIA is set in the \p flags field of \p src.
+ *
+ * The current segment register values are filled in under the assumption
+ * that this context is for the calling thread.
+ *
+ * \note floating-point values are not filled in for \p dst.
+ * \note Windows only.
+ *
+ * \return false if unsuccessful; if successful, does not return.
+ */
+bool
+dr_mcontext_to_context(CONTEXT *dst, dr_mcontext_t *src);
+#endif
+
 
 /***************************************************************************
  * DECODE / DISASSEMBLY ROUTINES
@@ -782,7 +833,7 @@ dr_redirect_native_target(void *drcontext);
  * the instr at \p pc.  If the instruction is a repeating string instruction,
  * considers only one iteration.
  * Returns the pc of the following instruction.
- * If the instruction at \p pc does not reference memory, or is invalid, 
+ * If the instruction at \p pc does not reference memory, or is invalid,
  * returns NULL.
  */
 app_pc
@@ -862,14 +913,14 @@ decode_trace(void *drcontext, void *tag);
  * Given an OP_ constant, returns the first byte of its opcode when
  * encoded as an IA-32 instruction.
  */
-byte 
+byte
 decode_first_opcode_byte(int opcode);
 
 /** Given an OP_ constant, returns the string name of its opcode. */
 const char *
 decode_opcode_name(int opcode);
 
-/** 
+/**
  * Decodes only enough of the instruction at address \p pc to determine its size.
  * Returns that size.
  * If \p num_prefixes is non-NULL, returns the number of prefix bytes.
@@ -878,11 +929,11 @@ decode_opcode_name(int opcode);
  * control-transfer relative addressing), or 0 if none.
  * May return 0 size for certain invalid instructions.
  */
-int 
+int
 decode_sizeof(void *drcontext, byte *pc, int *num_prefixes
               _IF_X64(uint *rip_rel_pos));
 
-/** 
+/**
  * Decodes only enough of the instruction at address \p pc to determine its size.
  * Returns the address of the byte following the instruction.
  * Returns NULL on decoding an invalid instruction.
@@ -921,6 +972,13 @@ typedef enum {
      * invalid.
      */
     DR_DISASM_STRICT_INVALID =  0x4,
+    /**
+     * This flag only applies to the default DR style (i.e., it does not apply
+     * when DR_DISASM_INTEL or DR_DISASM_ATT is selected).  That style by
+     * default displays the size of memory or sub-register operands via a
+     * suffix "[Nbytes]".  Setting this flag removes that suffix.
+     */
+    DR_DISASM_NO_OPND_SIZE   =  0x8,
 } dr_disasm_flags_t;
 
 
@@ -930,7 +988,7 @@ typedef enum {
 void
 disassemble_set_syntax(dr_disasm_flags_t flags);
 
-/** 
+/**
  * Decodes and then prints the instruction at address \p pc to file \p outfile.
  * The default is to use AT&T-style syntax, unless the \ref op_syntax_intel
  * "-syntax_intel" runtime option is specified.

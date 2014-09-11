@@ -1,6 +1,5 @@
 var drvector_8h =
 [
-    [ "_drvector_t", "struct__drvector__t.html", "struct__drvector__t" ],
     [ "drvector_t", "drvector_8h.html#ga75de93b82d4075650dd24e95acf164dd", null ],
     [ "drvector_append", "drvector_8h.html#ga380b542d2b8b997ded501df7f54b6919", null ],
     [ "drvector_delete", "drvector_8h.html#ga2e5949b592508c61e35ec14bfa731d62", null ],

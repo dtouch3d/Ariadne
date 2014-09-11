@@ -10,6 +10,7 @@ var dr__ir__instrlist_8h =
     [ "instrlist_encode", "dr__ir__instrlist_8h.html#aaac5ae2bc9af179b56bbbe5efc14e8b5", null ],
     [ "instrlist_encode_to_copy", "dr__ir__instrlist_8h.html#a8ae48a113e137b95cd3499f9fa57f5ea", null ],
     [ "instrlist_first", "dr__ir__instrlist_8h.html#ac9a47c1b7376ca06d8dcb4b3094e5a67", null ],
+    [ "instrlist_first_app", "dr__ir__instrlist_8h.html#a7facdfdbc94dff0029e1c7a0be55a934", null ],
     [ "instrlist_get_translation_target", "dr__ir__instrlist_8h.html#a18ae2e4d759afc814d47a52073bea348", null ],
     [ "instrlist_init", "dr__ir__instrlist_8h.html#a58f6c047c08e09d681dfcc6e35a0ef19", null ],
     [ "instrlist_last", "dr__ir__instrlist_8h.html#ae2f37fe5e485b5aed7a196a5a1348d4a", null ],

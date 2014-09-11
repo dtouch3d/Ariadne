@@ -24,7 +24,8 @@ var page_ext =
       [ "Search Paths", "page_drsyms.html#sec_drsyms_paths", null ],
       [ "Exported Functions", "page_drsyms.html#sec_drsyms_exports", null ],
       [ "API", "page_drsyms.html#sec_drsyms_api", [
-        [ "Memory Usage", "page_drsyms.html#sec_drsyms_mem", null ]
+        [ "Memory Usage", "page_drsyms.html#sec_drsyms_mem", null ],
+        [ "Module Bases", "page_drsyms.html#sec_drsyms_modbase", null ]
       ] ]
     ] ],
     [ "Function Wrapping and Replacing Extension", "page_drwrap.html", [
@@ -35,7 +36,6 @@ var page_ext =
     ] ],
     [ "DynamoRIO eXtension utilities", "page_drx.html", [
       [ "Setup", "page_drx.html#sec_drx_setup", null ],
-      [ "Instruction Note Fields", "page_drx.html#sec_drx_notes", null ],
       [ "Soft Kills", "page_drx.html#sec_drx_soft_kills", null ]
     ] ],
     [ "Multi-Instrumentation Manager", "page_drmgr.html", [
@@ -49,5 +49,8 @@ var page_ext =
         [ "Callback-local Storage", "page_drmgr.html#sec_drmgr_cls", null ]
       ] ],
       [ "Instruction Note Fields", "page_drmgr.html#sec_drmgr_notes", null ]
-    ] ]
+    ] ],
+    [ "Umbra: Shadow Memory Extension", "page_drmf_umbra.html", null ],
+    [ "System Call Monitoring Extension", "page_drmf_drsyscall.html", null ],
+    [ "Symbol Lookup Cache Extension", "page_drmf_drsymcache.html", null ]
 ];

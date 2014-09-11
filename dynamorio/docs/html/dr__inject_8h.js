@@ -13,6 +13,5 @@ var dr__inject_8h =
     [ "dr_inject_process_exit", "dr__inject_8h.html#afdd617e9fd2f5876fdaa63c27839c6de", null ],
     [ "dr_inject_process_inject", "dr__inject_8h.html#ab2a383d92917deebddd8c5ce2d80ea12", null ],
     [ "dr_inject_process_run", "dr__inject_8h.html#a2cb96f6575ec364703c228667a9cc2be", null ],
-    [ "dr_inject_using_debug_key", "dr__inject_8h.html#a6b79fe178320df5ebfd9f3ab868fe2a7", null ],
     [ "dr_inject_wait_for_child", "dr__inject_8h.html#afe7492fc543a3e395af4c6de7846ee43", null ]
 ];

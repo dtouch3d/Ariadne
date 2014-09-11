@@ -1,6 +1,5 @@
 var dr__app_8h =
 [
-    [ "DR_APP_API", "dr__app_8h.html#aed3a0d825116498ae89b00c849129d4d", null ],
     [ "dr_app_cleanup", "dr__app_8h.html#a216ee7d3e25b4c31edf5a9b2ba93d533", null ],
     [ "dr_app_handle_mbr_target", "dr__app_8h.html#aba46eea03a20e5801b87b7cd54d26bf5", null ],
     [ "dr_app_running_under_dynamorio", "dr__app_8h.html#aea917a6c24c8bf526f77772b0b9848a8", null ],

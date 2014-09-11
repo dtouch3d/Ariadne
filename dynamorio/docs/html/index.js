@@ -32,8 +32,9 @@ var index =
     [ "Code Manipulation API", "API_BT.html", [
       [ "Instruction Representation", "API_BT.html#sec_IR", null ],
       [ "Events", "API_BT.html#sec_events_bt", [
+        [ "Transformation Versus Execution Time", "API_BT.html#sec_control_points", null ],
         [ "Basic Block Creation", "API_BT.html#sec_events_bb", null ],
-        [ "Meta Instructions", "API_BT.html#sec_Meta", null ],
+        [ "Application Versus Meta Instructions", "API_BT.html#sec_Meta", null ],
         [ "Trace Creation", "API_BT.html#sec_events_trace", null ],
         [ "State Restoration", "API_BT.html#sec_events_translation", null ],
         [ "Basic Block and Trace Deletion", "API_BT.html#sec_events_del", null ]
@@ -77,7 +78,7 @@ var index =
       ] ]
     ] ],
     [ "DynamoRIO System Details", "overview.html", "overview" ],
-    [ "Release Notes for Version 4.2.0", "release_notes.html", [
+    [ "Release Notes for Version 5.0.0", "release_notes.html", [
       [ "Distribution Contents", "release_notes.html#sec_package", null ],
       [ "Changes Since Prior Releases", "release_notes.html#sec_changes", null ],
       [ "Limitations", "release_notes.html#sec_limits", [

@@ -1,22 +1,22 @@
 # **********************************************************
-# Copyright (c) 2010-2013 Google, Inc.    All rights reserved.
+# Copyright (c) 2010-2014 Google, Inc.    All rights reserved.
 # Copyright (c) 2009-2010 VMware, Inc.    All rights reserved.
 # **********************************************************
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of VMware, Inc. nor the names of its contributors may be
 #   used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -98,11 +98,16 @@ if ("${CMAKE_GENERATOR}" MATCHES "Visual Studio 10")
   # For i#801 workaround
   cmake_minimum_required(VERSION 2.8.8)
 else ()
-  # Require 2.6.4 to avoid cmake bug #8639, unless this var is
-  # properly set (which it is for DR b/c it has a workaround):
-  if (NOT "${CMAKE_ASM_SOURCE_FILE_EXTENSIONS}" MATCHES "asm")
-    cmake_minimum_required(VERSION 2.6.4)
-  endif ()
+  if (APPLE)
+    # We want ASM NASM support
+    cmake_minimum_required(VERSION 2.8.3)
+  else (APPLE)
+    # Require 2.6.4 to avoid cmake bug #8639, unless this var is
+    # properly set (which it is for DR b/c it has a workaround):
+    if (NOT "${CMAKE_ASM_SOURCE_FILE_EXTENSIONS}" MATCHES "asm")
+      cmake_minimum_required(VERSION 2.6.4)
+    endif ()
+  endif (APPLE)
 endif ()
 
 ##################################################
@@ -159,20 +164,34 @@ if (NOT "${CMAKE_GENERATOR}" MATCHES "Visual Studio")
   # CMake does not support assembly with VS generators
   # (http://public.kitware.com/Bug/view.php?id=11536)
   # so we have to add our own custom commands and targets
-  enable_language(ASM)
+  if (APPLE)
+    # NASM support was added in 2.8.3.  It clears ASM_DIALECT for us.
+    enable_language(ASM_NASM)
+  else (APPLE)
+    enable_language(ASM)
+  endif (APPLE)
 endif ()
 
 if (APPLE)
-  # See above: we can't use CMAKE_ASM_COMPILER and require nasm.
+  # XXX: we may be able to avoid some of this given CMake 2.8.3's NASM support.
   find_program(NASM nasm DOC "path to nasm assembler")
   if (NOT NASM)
     message(FATAL_ERROR "nasm assembler not found: required to build")
   endif (NOT NASM)
   message(STATUS "Found nasm: ${NASM}")
+  execute_process(COMMAND ${NASM} -hf OUTPUT_VARIABLE nasm_result ERROR_QUIET)
   if (X64)
+    # x64 support added between 0.98.40 and 2.10.07
+    if (NOT nasm_result MATCHES macho64)
+      message(FATAL_ERROR "nasm is too old: no 64-bit support")
+    endif ()
     set(ASM_FLAGS "${ASM_FLAGS} -fmacho64")
   else (X64)
-    set(ASM_FLAGS "${ASM_FLAGS} -fmacho32")
+    if (nasm_result MATCHES macho32)
+      set(ASM_FLAGS "${ASM_FLAGS} -fmacho32")
+    else ()
+      set(ASM_FLAGS "${ASM_FLAGS} -fmacho")
+    endif ()
   endif (X64)
   if (DEBUG)
     set(ASM_FLAGS "${ASM_FLAGS} -g")
@@ -248,7 +267,7 @@ endif (UNIX AND NOT APPLE)
 
 if (APPLE)
   # Despite the docs, -o does not work: cpp prints to stdout.
-  set(CMAKE_ASM_COMPILE_OBJECT
+  set(CMAKE_ASM_NASM_COMPILE_OBJECT
     "${CMAKE_CPP} ${CMAKE_CPP_FLAGS} <FLAGS> <DEFINES> -E <SOURCE> > <OBJECT>.s"
     "<CMAKE_COMMAND> -Dfile=<OBJECT>.s -P \"${cpp2asm_newline_script_path}\""
     "<NASM> ${ASM_FLAGS} -o <OBJECT> <OBJECT>.s"

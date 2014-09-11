@@ -1,22 +1,22 @@
 /* ******************************************************************************
- * Copyright (c) 2013 Google, Inc.  All rights reserved.
+ * Copyright (c) 2013-2014 Google, Inc.  All rights reserved.
  * ******************************************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -111,7 +111,7 @@ bb_aflags_are_dead(instrlist_t *ilist, instr_t *where)
 {
     instr_t *instr;
     uint flags;
-    
+
     for (instr = where; instr != NULL; instr = instr_get_next(instr)) {
         flags = instr_get_arith_flags(instr);
         if (TESTANY(EFLAGS_READ_6, flags))
@@ -155,9 +155,9 @@ event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
                                      OPND_CREATE_MEMPTR(reg, 0),
                                      bb, first, &mov1, &mov2);
     DR_ASSERT(mov1 != NULL);
-    instr_set_ok_to_mangle(mov1, false);
+    instr_set_meta(mov1);
     if (mov2 != NULL)
-        instr_set_ok_to_mangle(mov2, false);
+        instr_set_meta(mov2);
 
     /* update the TLS buffer pointer by incrementing just the bottom 16 bits of
      * the pointer
@@ -239,9 +239,11 @@ event_exit(void)
         DR_ASSERT(false);
 }
 
-DR_EXPORT void 
+DR_EXPORT void
 dr_init(client_id_t id)
 {
+    dr_set_client_name("DynamoRIO Sample Client 'bbbuf'",
+                       "http://dynamorio.org/issues");
     /* register events */
     dr_register_thread_init_event(event_thread_init);
     dr_register_thread_exit_event(event_thread_exit);

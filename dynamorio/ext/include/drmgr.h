@@ -1,22 +1,22 @@
 /* **********************************************************
- * Copyright (c) 2010-2013 Google, Inc.   All rights reserved.
+ * Copyright (c) 2010-2014 Google, Inc.   All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of Google, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -315,6 +315,13 @@ DR_EXPORT
  *                             Can be NULL if analysis_func is non-NULL.
  * @param[in]  priority        Specifies the relative ordering of both callbacks.
  *                             Can be NULL, in which case a default priority is used.
+ *
+ * \note It is possible for meta instructions to be present and passed
+ * to the analysis and/or insertion stages, if they were added in the
+ * app2app or analysis stages.  While this is discouraged, it is
+ * sometimes unavoidable, such as for drwrap_replace_native().  We
+ * recommend that all instrumentation stages check for meta
+ * instructions (and ignore them, typically).
  */
 bool
 drmgr_register_bb_instrumentation_event(drmgr_analysis_cb_t analysis_func,
@@ -448,14 +455,14 @@ void *
 drmgr_get_tls_field(void *drcontext, int idx);
 
 DR_EXPORT
-/** 
+/**
  * Sets the user-controlled thread-local-storage field for the
  * given index, which was returned by drmgr_register_tls_field().  To
  * generate an instruction sequence that writes the drcontext field
  * inline in the code cache, use drmgr_insert_write_tls_field().
  * \return whether successful.
  */
-bool 
+bool
 drmgr_set_tls_field(void *drcontext, int idx, void *value);
 
 DR_EXPORT
@@ -491,20 +498,31 @@ drmgr_insert_write_tls_field(void *drcontext, int idx,
 
 /**
  * Priority of drmgr instrumentation pass used to track CLS.  Users
- * of drmgr can use the name DRMGR_PRIORITY_NAME_CLS in the
- * drmgr_priority_t.before field or can use this numeric priority
+ * of drmgr can use the names #DRMGR_PRIORITY_NAME_CLS_ENTRY or
+ * #DRMGR_PRIORITY_NAME_CLS_EXIT in the
+ * drmgr_priority_t.before field or can use these numeric priorities
  * in the drmgr_priority_t.priority field to ensure proper
- * instrumentation pass ordering.
+ * instrumentation pass ordering.  The #DRMGR_PRIORITY_INSERT_CLS_ENTRY
+ * should go before any client event and the #DRMGR_PRIORITY_INSERT_CLS_EXIT
+ * should go after any client event.
  */
 enum {
-    DRMGR_PRIORITY_INSERT_CLS   =  0, /**< Priority of CLS tracking */
+    DRMGR_PRIORITY_INSERT_CLS_ENTRY  =  -500, /**< Priority of CLS entry tracking */
+    DRMGR_PRIORITY_INSERT_CLS_EXIT   =  5000, /**< Priority of CLS exit tracking */
 };
 
-/** Name of drmgr insert pass prioritiy for CLS tracking */
+/** Name of drmgr insert pass priority for CLS entry tracking */
 #ifdef WINDOWS
-# define DRMGR_PRIORITY_NAME_CLS "drmgr_cls"
+# define DRMGR_PRIORITY_NAME_CLS_ENTRY "drmgr_cls_entry"
 #else
-# define DRMGR_PRIORITY_NAME_CLS NULL
+# define DRMGR_PRIORITY_NAME_CLS_ENTRY NULL
+#endif
+
+/** Name of drmgr insert pass priority for CLS exit tracking */
+#ifdef WINDOWS
+# define DRMGR_PRIORITY_NAME_CLS_EXIT  "drmgr_cls_exit"
+#else
+# define DRMGR_PRIORITY_NAME_CLS_EXIT  NULL
 #endif
 
 DR_EXPORT
@@ -580,14 +598,14 @@ void *
 drmgr_get_cls_field(void *drcontext, int idx);
 
 DR_EXPORT
-/** 
+/**
  * Sets the user-controlled callback-local-storage field for the
  * given index, which was returned by drmgr_register_cls_field().  To
  * generate an instruction sequence that writes the drcontext field
  * inline in the code cache, use drmgr_insert_write_cls_field().
  * \return whether successful.
  */
-bool 
+bool
 drmgr_set_cls_field(void *drcontext, int idx, void *value);
 
 DR_EXPORT

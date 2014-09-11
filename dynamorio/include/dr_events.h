@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -75,7 +75,7 @@ dr_unregister_exit_event(void (*func)(void));
 typedef enum {
     /** Emit as normal. */
     DR_EMIT_DEFAULT              =    0,
-    /** 
+    /**
      * Store translation information at emit time rather than calling
      * the basic block or trace event later to recreate the
      * information.  Note that even if a standalone basic block has
@@ -87,7 +87,7 @@ typedef enum {
      * \sa #dr_register_bb_event()
      */
     DR_EMIT_STORE_TRANSLATIONS   = 0x01,
-    /** 
+    /**
      * Only valid when applied to a basic block.  Indicates that the
      * block is eligible for persisting to a persistent code cache
      * file on disk.  By default, no blocks are eligible, as tools
@@ -97,7 +97,7 @@ typedef enum {
      * easily persisting it.
      */
     DR_EMIT_PERSISTABLE          = 0x02,
-    /** 
+    /**
      * Only valid when applied to a basic block.  Indicates that the
      * block must terminate a trace.  Normally this should be set when
      * an abnormal exit is used from the block that is incompatible with
@@ -130,6 +130,14 @@ typedef enum {
  * keep its same instrumentation in the trace, or to change it.  The
  * original basic block's instrumentation is unchanged by whatever
  * action is taken in the \p for_trace call.
+ *
+ * DR constructs <em>dynamic basic blocks</em>, which are distinct
+ * from a compiler's classic basic blocks.  DR does not know all entry
+ * points ahead of time, and will end up duplicating the tail of a
+ * basic block if a later entry point is discovered that targets the
+ * middle of a block created earlier, or if a later entry point
+ * targets straight-line code that falls through into code already
+ * present in a block.
  *
  * DR may call \p func again if it needs to translate from code cache
  * addresses back to application addresses, which happens on faulting
@@ -164,11 +172,11 @@ typedef enum {
  *
  * The user is free to inspect and modify the block before it
  * executes, but must adhere to the following restrictions:
- * - If there is more than one non-meta branch, only the last can be
+ * - If there is more than one application branch, only the last can be
  * conditional.
- * - A non-meta conditional branch must be the final
+ * - An application conditional branch must be the final
  * instruction in the block.
- * - A non-meta direct call must be the final
+ * - An application direct call must be the final
  * instruction in the block unless it is inserted by DR for elision and the
  * subsequent instructions are the callee.
  * - There can only be one indirect branch (call, jump, or return) in
@@ -209,7 +217,7 @@ typedef enum {
  * must also be able to translate when a suspended thread is examined by
  * the application or by DR itself for internal synchronization purposes.
  * If the client is only adding observational instrumentation (i.e., meta
- * instructions: see #instr_set_ok_to_mangle()) (which should not fault) and
+ * instructions: see #instr_set_meta()) (which should not fault) and
  * is not modifying, reordering, or removing application instructions,
  * these details can be ignored.  In that case the client should return
  * #DR_EMIT_DEFAULT and set up its basic block callback to be deterministic
@@ -219,7 +227,7 @@ typedef enum {
  * the corresponding application address (the address that should be
  * presented to the application as the faulting address, or the address
  * that should be restarted after a suspend) for each modified instruction
- * and each added non-meta instruction (see #instr_set_ok_to_mangle()).
+ * and each added application instruction (see #instr_set_app()).
  *
  * There are two methods for using the translated addresses:
  *
@@ -245,7 +253,7 @@ typedef enum {
  *    it saves memory.  Naturally, global state changes triggered by
  *    block creation should be wrapped in checks for \p translating
  *    being false.  Even in this case, #instr_set_translation() should
- *    be called for non-meta instructions even when \p translating is
+ *    be called for application instructions even when \p translating is
  *    false, as DR may decide to store the translations at creation
  *    time for reasons of its own.
  *
@@ -257,7 +265,7 @@ typedef enum {
  *
  * For meta instructions that do not reference application memory
  * (i.e., they should not fault), leave the translation field as NULL.
- * A NULL value instructs DR to use the subsequent non-meta
+ * A NULL value instructs DR to use the subsequent application
  * instruction's translation as the application address, and to fail
  * when translating the full state.  Since the full state will only be
  * needed when relocating a thread (as stated, there will not be a
@@ -287,7 +295,7 @@ typedef enum {
  * basic block passed to earlier-registered clients will contain the
  * instrumentation and modifications put in place by later-registered
  * clients.
- * 
+ *
  * \note Basic blocks can be deleted due to hitting capacity limits or
  * cache consistency events (when the source application code of a
  * basic block is modified).  In that case, the client will see a new
@@ -304,17 +312,17 @@ typedef enum {
  * thread-private basic blocks (e.g., self-modifying code).  In this
  * case, clients should be prepared to see duplicate tags without an
  * intermediate deletion.
- * 
- * \note A client can change the control flow of the application by 
+ *
+ * \note A client can change the control flow of the application by
  * changing the control transfer instruction at end of the basic block.
  * If a basic block is ended with a non-control transfer instruction,
- * a non-meta jump instruction can be inserted. 
+ * an application jump instruction can be inserted.
  * If a basic block is ended with a conditional branch,
  * \p instrlist_set_fall_through_target can be used to change the
  * fall-through target.
- * If a basic block is ended with a call instruction, 
- * \p instrlist_set_return_target can be used to change the return 
- * target of the call. 
+ * If a basic block is ended with a call instruction,
+ * \p instrlist_set_return_target can be used to change the return
+ * target of the call.
  */
 void
 dr_register_bb_event(dr_emit_flags_t (*func)
@@ -375,10 +383,10 @@ dr_unregister_bb_event(dr_emit_flags_t (*func)
  *   the trace is created.  Instead, modify the component blocks by
  *   changing the block continuation addresses in the basic block callbacks
  *   (called with \p for_trace set to true) as the trace is being built.
- * - The (non-meta) control flow instruction (if any) terminating each
+ * - The (application) control flow instruction (if any) terminating each
  *   component block cannot be changed.
- * - Non-meta control flow instructions cannot be added.
- * - The parameter to a system call, normally kept in the eax register, 
+ * - Application control flow instructions cannot be added.
+ * - The parameter to a system call, normally kept in the eax register,
  *   cannot be changed.
  * - A system call or interrupt instruction cannot be added.
  * - If both a floating-point state save instruction (fnstenv, fnsave,
@@ -410,8 +418,8 @@ dr_unregister_bb_event(dr_emit_flags_t (*func)
  *
  * \note Certain control flow modifications applied to a basic block
  * can prevent it from becoming part of a trace: e.g., adding
- * additional non-meta control transfers.
- * 
+ * additional application control transfers.
+ *
  * \note If multiple clients are present, the instruction list for a
  * trace passed to earlier-registered clients will contain the
  * instrumentation and modifications put in place by later-registered
@@ -516,7 +524,7 @@ dr_unregister_delete_event(void (*func)(void *drcontext, void *tag));
  * purposes.
  *
  * If a client is only adding instrumentation (meta-code: see
- * #instr_ok_to_mangle()) that does not reference application memory,
+ * #instr_is_meta()) that does not reference application memory,
  * and is not reordering or removing application instructions, then it
  * need not register for this event.  If, however, a client is
  * modifying application code or is adding code that can fault, the
@@ -571,8 +579,8 @@ dr_unregister_restore_state_event(void (*func)
 /**
  * Data structure passed within dr_exception_t, dr_siginfo_t, and
  * dr_restore_state_info_t.
- * Contains information about the code fragment inside the code cache 
- * at the exception/signal/translation interruption point. 
+ * Contains information about the code fragment inside the code cache
+ * at the exception/signal/translation interruption point.
  */
 typedef struct _dr_fault_fragment_info_t {
     /**
@@ -586,7 +594,7 @@ typedef struct _dr_fault_fragment_info_t {
      * the exception/signal/translation interruption point. NULL for interruption
      * not in the code cache.  Clients are cautioned when examining
      * code cache instructions to not rely on any details of code
-     * inserted other than their own.  
+     * inserted other than their own.
      */
     byte *cache_start_pc;
     /** Indicates whether the interrupted code fragment is a trace */
@@ -598,7 +606,7 @@ typedef struct _dr_fault_fragment_info_t {
      * code was placed in the code cache. This guarantee varies
      * depending on the type of cache consistency being used by DR.
      */
-    bool app_code_consistent;    
+    bool app_code_consistent;
 } dr_fault_fragment_info_t;
 
 /**
@@ -617,7 +625,7 @@ typedef struct _dr_restore_state_info_t {
     dr_mcontext_t *mcontext;
     /** Whether raw_mcontext is valid. */
     bool raw_mcontext_valid;
-    /** 
+    /**
      * The raw pre-translated machine state at the translation
      * interruption point inside the code cache.  Clients are
      * cautioned when examining code cache instructions to not rely on
@@ -838,7 +846,7 @@ typedef struct _dr_exception_t {
      */
     dr_mcontext_t *mcontext;
     EXCEPTION_RECORD *record; /**< Win32 exception record. */
-    /** 
+    /**
      * The raw pre-translated machine state at the exception interruption
      * point inside the code cache.  Clients are cautioned when examining
      * code cache instructions to not rely on any details of code inserted
@@ -849,7 +857,7 @@ typedef struct _dr_exception_t {
     dr_mcontext_t *raw_mcontext;
     /**
      * Information about the code fragment inside the code cache at
-     * the exception interruption point. 
+     * the exception interruption point.
      */
     dr_fault_fragment_info_t fault_fragment_info;
 } dr_exception_t;
@@ -883,13 +891,13 @@ typedef struct _dr_exception_t {
  * handlers and to send control elsewhere instead, a client can call
  * dr_redirect_execution() from \p func.
  *
- * \note \p excpt->fault_fragment_info data is provided with 
- * \p excpt->raw_mcontext. It is valid only if  
- * \p excpt->fault_fragment_info.cache_start_pc is not \p NULL. 
+ * \note \p excpt->fault_fragment_info data is provided with
+ * \p excpt->raw_mcontext. It is valid only if
+ * \p excpt->fault_fragment_info.cache_start_pc is not \p NULL.
  * It provides clients information about the code fragment being
  * executed at the exception interruption point. Clients are cautioned
  * against relying on any details of code cache layout or register
- * usage beyond  instrumentation inserted by the client itself.  
+ * usage beyond  instrumentation inserted by the client itself.
  * \note Only valid on Windows.
  * \note The function is not called for RaiseException.
  */
@@ -952,12 +960,18 @@ dr_unregister_filter_syscall_event(bool (*func)(void *drcontext, int sysnum));
  * this way overlaps with system call parameter changes on some
  * platforms.  On Linux, for SYS_clone, client changes to the ebp/rbp
  * register will be ignored by the clone child.
- * 
+ *
+ * On MacOS, whether 32-bit or 64-bit, the system call number passed
+ * (\p sysnum) has been normalized to a positive number with the top 8
+ * bits set to 0x1 for a Mach system call, 0x3 for Machdep, and 0x0
+ * for BSD (allowing the direct use of SYS_ constants).  Access the
+ * raw eax register to view the unmodified number.
+ *
  * If \p func returns true, the application's system call is invoked
  * normally; if \p func returns false, the system call is skipped.  If
  * it is skipped, the return value can be set with
- * dr_syscall_set_result().  If the system call is skipped, there will
- * not be a post-syscall event.
+ * dr_syscall_set_result() or dr_syscall_set_result_ex().  If the
+ * system call is skipped, there will not be a post-syscall event.
  * If multiple callbacks are registered, the first one that returns
  * false will short-circuit event delivery to later callbacks.
  */
@@ -979,7 +993,7 @@ dr_unregister_pre_syscall_event(bool (*func)(void *drcontext, int sysnum));
  * intercepted via the filter event
  * (dr_register_filter_syscall_event()) or if DR itself needs to
  * intercept the system call.  The result of the system call can be
- * modified with dr_syscall_set_result().
+ * modified with dr_syscall_set_result() or dr_syscall_set_result_ex().
  *
  * System calls that change control flow or terminate the current
  * thread or process typically do not have a post-syscall event.
@@ -990,7 +1004,13 @@ dr_unregister_pre_syscall_event(bool (*func)(void *drcontext, int sysnum));
  *
  * The application's machine state can be accessed and set with
  * dr_get_mcontext() and dr_set_mcontext().
- * 
+ *
+ * On MacOS, whether 32-bit or 64-bit, the system call number passed
+ * (\p sysnum) has been normalized to a positive number with the top 8
+ * bits set to 0x1 for a Mach system call, 0x3 for Machdep, and 0x0
+ * for BSD (allowing the direct use of SYS_ constants).  Access the
+ * raw eax register to view the unmodified number.
+ *
  * Additional system calls may be invoked by calling
  * dr_syscall_invoke_another() prior to returning from the
  * post-syscall event callback.  The system call to be invoked should
@@ -1026,7 +1046,7 @@ typedef struct _dr_siginfo_t {
      * remain DR_MC_ALL.
      */
     dr_mcontext_t *mcontext;
-    /** 
+    /**
      * The raw pre-translated machine state at the signal interruption
      * point inside the code cache.  NULL for delayable signals.  Clients
      * are cautioned when examining code cache instructions to not rely on
@@ -1048,7 +1068,7 @@ typedef struct _dr_siginfo_t {
      * the application.  Events are only sent for blocked non-delayable signals,
      * not for delayable signals.
      */
-    bool blocked;       
+    bool blocked;
     /**
      * Information about the code fragment inside the code cache
      * at the signal interruption point.
@@ -1106,7 +1126,7 @@ typedef enum {
  * DR_SIGNAL_SUPPRESS is returned, \p siginfo->mcontext is ignored and \p
  * siginfo->raw_mcontext is used as the resumption context.  The client's
  * changes to \p siginfo->raw_mcontext will take effect.
- * 
+ *
  * For a delayable signal, DR raises a signal event only when about to
  * deliver the signal to the application.  Thus, if the application has
  * blocked a delayable signal, the corresponding signal event will not
@@ -1127,15 +1147,15 @@ typedef enum {
  * dr_safe_read(), dr_safe_write(), or DR_TRY_EXCEPT() to prevent such
  * faults.
  *
- * \note \p siginfo->fault_fragment_info data is provided 
- * with \p siginfo->raw_mcontext. It is valid only if 
- * \p siginfo->fault_fragment_info.cache_start_pc is not 
+ * \note \p siginfo->fault_fragment_info data is provided
+ * with \p siginfo->raw_mcontext. It is valid only if
+ * \p siginfo->fault_fragment_info.cache_start_pc is not
  * \p NULL. It provides clients information about the code fragment
  * being executed at the signal interruption point. Clients are
  * cautioned against relying on any details of code cache layout or
  * register usage beyond instrumentation inserted by the client
- * itself. 
- * 
+ * itself.
+ *
  * \note Only valid on Linux.
  *
  * \note DR always requests SA_SIGINFO for all signals.
@@ -1219,7 +1239,7 @@ dr_nudge_client(client_id_t id, uint64 argument);
  * \param[in]   argument        An argument passed to the client's nudge
  *                              handler.
  *
- * \param[in]   timeout_ms      Windows-only.  The number of milliseconds to wait for
+ * \param[in]   timeout_ms      Windows only.  The number of milliseconds to wait for
  *                              each nudge to complete before continuing. If INFINITE
  *                              is supplied then the wait is unbounded. If 0
  *                              is supplied the no wait is performed.  If a
@@ -1235,6 +1255,7 @@ dr_nudge_client_ex(process_id_t process_id, client_id_t client_id,
  * On Windows, nudges are implemented via remotely injected threads.
  * This routine returns whether or not the thread indicated by
  * \p drcontext is such a nudge thread.
+ * \note Windows only.
  */
 bool
 dr_is_nudge_thread(void *drcontext);
@@ -1344,7 +1365,7 @@ dr_unregister_persist_ro(size_t (*func_size)(void *drcontext, void *perscxt,
  * code blocks) in each persisted cache file.  When generating a new persisted
  * cache file, DR first calls \p func_size to obtain the size required for
  * executable code in each persisted cache file.  DR subsequently calls \p
- * func_persist to write the actual code.  
+ * func_persist to write the actual code.
  * DR ensures that no other thread will execute in between the calls
  * to \p func_size and \p func_persist.
  *
@@ -1485,7 +1506,7 @@ dr_unregister_persist_rw(size_t (*func_size)(void *drcontext, void *perscxt,
  * \warning This patching interface is in flux and is subject to
  * change in the next release.  Consider it experimental in this
  * release.
- * 
+ *
  * Registers a callback function for patching code prior to storing it in a
  * persisted cache file.  The length of each instruction cannot be changed, but
  * displacements and offsets can be adjusted to make the code
@@ -1522,7 +1543,7 @@ dr_unregister_persist_patch(bool (*func_patch)(void *drcontext, void *perscxt,
 
 /**
  * Create instructions for storing pointer-size integer \p val to \p dst,
- * and then insert them into \p ilist prior to \p where. 
+ * and then insert them into \p ilist prior to \p where.
  * The created instructions are returned in \p first and \p second.
  * Note that \p second may return NULL if only one instruction is created.
  */
@@ -1533,7 +1554,7 @@ instrlist_insert_mov_immed_ptrsz(void *drcontext, ptr_int_t val, opnd_t dst,
 
 /**
  * Create instructions for pushing pointer-size integer \p val on the stack,
- * and then insert them into \p ilist prior to \p where. 
+ * and then insert them into \p ilist prior to \p where.
  * The created instructions are returned in \p first and \p second.
  * Note that \p second may return NULL if only one instruction is created.
  */

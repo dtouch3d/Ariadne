@@ -1,23 +1,23 @@
 /* **********************************************************
- * Copyright (c) 2011-2012 Google, Inc.  All rights reserved.
+ * Copyright (c) 2011-2014 Google, Inc.  All rights reserved.
  * Copyright (c) 2007-2010 VMware, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,7 +62,7 @@ typedef enum {
     /**
      * A custom key.  Hash and compare operations must be provided
      * in hashtable_init_ex().  The hash operation can return a full
-     * uint, as its result will be truncated via a mod of the 
+     * uint, as its result will be truncated via a mod of the
      * hash key bit size.  This allows for resizing the table
      * without changing the hash operation.
      */
@@ -171,6 +171,7 @@ hashtable_add(hashtable_t *table, void *key, void *payload);
 
 /**
  * Adds a new entry, replacing an existing entry if any.
+ * Returns the old payload, or NULL if there was no existing entry.
  * \note Never use NULL as a payload as that is used for a lookup failure.
  */
 void *
@@ -214,7 +215,15 @@ hashtable_lock(hashtable_t *table);
 /** Releases the hashtable lock. */
 void
 hashtable_unlock(hashtable_t *table);
-    
+
+/**
+ * Returns true iff the hashtable lock is owned by the calling thread.
+ * This routine is only available in debug builds.
+ * In release builds it always returns true.
+ */
+bool
+hashtable_lock_self_owns(hashtable_t *table);
+
 /* DR_API EXPORT BEGIN */
 /** Flags to control hashtable persistence */
 typedef enum {
@@ -259,7 +268,7 @@ typedef enum {
 } hasthable_persist_flags_t;
 /* DR_API EXPORT END */
 
-/** 
+/**
  * For use persisting a table of single-alloc entries (i.e., via a
  * shallow copy) for loading into a live table later.
  *
@@ -278,7 +287,7 @@ size_t
 hashtable_persist_size(void *drcontext, hashtable_t *table, size_t entry_size,
                        void *perscxt, hasthable_persist_flags_t flags);
 
-/** 
+/**
  * For use persisting a table of single-alloc entries (i.e., via a
  * shallow copy) for loading into a live table later.
  *
@@ -301,7 +310,7 @@ bool
 hashtable_persist(void *drcontext, hashtable_t *table, size_t entry_size,
                   file_t fd, void *perscxt, hasthable_persist_flags_t flags);
 
-/** 
+/**
  * For use persisting a table of single-alloc entries (i.e., via a
  * shallow copy) for loading into a live table later.
  *

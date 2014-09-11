@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -56,7 +56,7 @@ typedef enum {
  * CLIENT AUXILIARY LIBRARY TYPES
  */
 
-/** 
+/**
  * A handle to a loaded client auxiliary library.  This is a different
  * type than module_handle_t and is not necessarily the base address.
  */
@@ -190,7 +190,7 @@ typedef union _version_number_t {
 typedef struct _module_names_t {
     const char *module_name; /**< On windows this name comes from the PE header exports
                               * section (NULL if the module has no exports section).  On
-                              * Linux the name will come from the ELF DYNAMIC program 
+                              * Linux the name will come from the ELF DYNAMIC program
                               * header (NULL if the module has no SONAME entry). */
     const char *file_name; /**< The file name used to load this module. Note - on Windows
                             * this is not always available. */
@@ -220,8 +220,8 @@ typedef struct _module_names_t {
 
 /**
  * Creates a DR context that can be used in a standalone program.
- * \warning This context cannot be used as the drcontext for a thread 
- * running under DR control!  It is only for standalone programs that 
+ * \warning This context cannot be used as the drcontext for a thread
+ * running under DR control!  It is only for standalone programs that
  * wish to use DR as a library of disassembly, etc. routines.
  * \return NULL on failure, such as running on an unsupported operating
  * system version.
@@ -243,7 +243,7 @@ dr_standalone_init(void);
 /**
  * If \p x is false, displays a message about an assertion failure
  * (appending \p msg to the message) and then calls dr_abort()
- */ 
+ */
 # define DR_ASSERT_MSG(x, msg) \
     ((void)((!(x)) ? \
         (dr_messagebox("ASSERT FAILURE: %s:%d: %s (%s)", __FILE__,  __LINE__, #x, msg),\
@@ -259,7 +259,7 @@ dr_standalone_init(void);
 /**
  * If \p x is false, displays a message about an assertion failure and
  * then calls dr_abort()
- */ 
+ */
 #define DR_ASSERT(x) DR_ASSERT_MSG(x, "")
 
 
@@ -272,7 +272,7 @@ dr_using_all_private_caches(void);
 void
 dr_request_synchronized_exit(void);
 
-/** 
+/**
  * Returns the client-specific option string specified at client
  * registration.  \p client_id is the client ID passed to dr_init().
  */
@@ -318,6 +318,17 @@ dr_get_client_path(client_id_t client_id);
 byte *
 dr_get_client_base(client_id_t client_id);
 
+/**
+ * Sets information presented to users in diagnostic messages.
+ * Only one name is supported, regardless of how many clients are in use.
+ * If this routine is called a second time, the new values supersede
+ * the original.
+ * The \p report_URL is meant to be a bug tracker location where users
+ * should go to report errors in the client end-user tool.
+ */
+bool
+dr_set_client_name(const char *name, const char *report_URL);
+
 /** Returns the image name (without path) of the current application. */
 const char *
 dr_get_application_name(void);
@@ -327,7 +338,7 @@ process_id_t
 dr_get_process_id(void);
 
 /**
- * Returns the process id of the parent of the current process. 
+ * Returns the process id of the parent of the current process.
  * \note Linux only.
  */
 process_id_t
@@ -335,15 +346,34 @@ dr_get_parent_id(void);
 #ifdef WINDOWS
 
 /** Windows versions */
+/* http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832(v=vs.85).aspx */
 typedef enum {
-    DR_WINDOWS_VERSION_8_1   = 63,
-    DR_WINDOWS_VERSION_8     = 62,
-    DR_WINDOWS_VERSION_7     = 61,
-    DR_WINDOWS_VERSION_VISTA = 60,
-    DR_WINDOWS_VERSION_2003  = 52, /**< 64-bit XP is this version as well */
-    DR_WINDOWS_VERSION_XP    = 51,
-    DR_WINDOWS_VERSION_2000  = 50,
-    DR_WINDOWS_VERSION_NT    = 40,
+    /** Windows 8.1 */
+    DR_WINDOWS_VERSION_8_1     = 63,
+    /** Windows Server 2012 R2 */
+    DR_WINDOWS_VERSION_2012_R2 = DR_WINDOWS_VERSION_8_1,
+    /** Windows 8 */
+    DR_WINDOWS_VERSION_8       = 62,
+    /** Windows Server 2012 */
+    DR_WINDOWS_VERSION_2012    = DR_WINDOWS_VERSION_8,
+    /** Windows 7 */
+    DR_WINDOWS_VERSION_7       = 61,
+    /** Windows Server 2008 R2 */
+    DR_WINDOWS_VERSION_2008_R2 = DR_WINDOWS_VERSION_7,
+    /** Windows Vista */
+    DR_WINDOWS_VERSION_VISTA   = 60,
+    /** Windows Server 2008 */
+    DR_WINDOWS_VERSION_2008    = DR_WINDOWS_VERSION_VISTA,
+    /** Windows Server 2003 */
+    DR_WINDOWS_VERSION_2003    = 52,
+    /** Windows XP 64-bit */
+    DR_WINDOWS_VERSION_XP_X64  = DR_WINDOWS_VERSION_2003,
+    /** Windows XP */
+    DR_WINDOWS_VERSION_XP      = 51,
+    /** Windows 2000 */
+    DR_WINDOWS_VERSION_2000    = 50,
+    /** Windows NT */
+    DR_WINDOWS_VERSION_NT      = 40,
 } dr_os_version_t;
 
 /** Data structure used with dr_get_os_version() */
@@ -359,7 +389,7 @@ typedef struct _dr_os_version_info_t {
 } dr_os_version_info_t;
 
 
-/** 
+/**
  * Returns information about the version of the operating system.
  * Returns whether successful.  \note Windows only.  \note The Windows
  * API routine GetVersionEx may hide distinctions between versions,
@@ -370,7 +400,7 @@ typedef struct _dr_os_version_info_t {
 bool
 dr_get_os_version(dr_os_version_info_t *info);
 
-/** 
+/**
  * Returns true if this process is a 32-bit process operating on a
  * 64-bit Windows kernel, known as Windows-On-Windows-64, or WOW64.
  * Returns false otherwise.  \note Windows only.
@@ -378,7 +408,7 @@ dr_get_os_version(dr_os_version_info_t *info);
 bool
 dr_is_wow64(void);
 
-/** 
+/**
  * Returns a pointer to the application's Process Environment Block
  * (PEB).  DR swaps to a private PEB when running client code, in
  * order to isolate the client and its dependent libraries from the
@@ -429,7 +459,7 @@ dr_get_milliseconds(void);
 uint
 dr_get_random_value(uint max);
 
-/** 
+/**
  * Sets the seed used for dr_get_random_value().  Generally this would
  * only be called during client initialization.
  */
@@ -440,7 +470,7 @@ dr_set_random_seed(uint seed);
 uint
 dr_get_random_seed(void);
 
-/** 
+/**
  * Aborts the process immediately without any cleanup (i.e., the exit event
  * will not be called).
  */
@@ -459,6 +489,56 @@ dr_abort(void);
  */
 void
 dr_exit_process(int exit_code);
+/** Indicates the type of memory dump for dr_create_memory_dump(). */
+typedef enum {
+    /**
+     * A "livedump", or "ldmp", DynamoRIO's own custom memory dump format.
+     * The ldmp format does not currently support specifying a context
+     * for the calling thread, so it will always include the call frames
+     * to dr_create_memory_dump().  The \p ldmp.exe tool can be used to
+     * create a dummy process (using the \p dummy.exe executable) which
+     * can then be attached to by the debugger (use a non-invasive attach)
+     * in order to view the memory dump contents.
+     *
+     * \note Windows only.
+     */
+    DR_MEMORY_DUMP_LDMP    = 0x0001,
+} dr_memory_dump_flags_t;
+
+/** Indicates the type of memory dump for dr_create_memory_dump(). */
+typedef struct _dr_memory_dump_spec_t {
+    /** The size of this structure.  Set this to sizeof(dr_memory_dump_spec_t). */
+    size_t size;
+    /** The type of memory dump requested. */
+    dr_memory_dump_flags_t flags;
+    /**
+     * This field only applies to DR_MEMORY_DUMP_LDMP.  This string is
+     * stored inside the ldmp as the reason for the dump.
+     */
+    const char *label;
+    /**
+     * This field only applies to DR_MEMORY_DUMP_LDMP.  This is an optional output
+     * field that, if non-NULL, will be written with the path to the created file.
+     */
+    char *ldmp_path;
+    /**
+     * This field only applies to DR_MEMORY_DUMP_LDMP.  This is the maximum size,
+     * in bytes, of ldmp_path.
+     */
+    size_t ldmp_path_size;
+} dr_memory_dump_spec_t;
+
+
+/**
+ * Requests that DR create a memory dump file of the current process.
+ * The type of dump is specified by \p spec.
+ *
+ * \return whether successful.
+ *
+ * \note this function is only supported on Windows for now.
+ */
+bool
+dr_create_memory_dump(dr_memory_dump_spec_t *spec);
 
 /**************************************************
  * APPLICATION-INDEPENDENT MEMORY ALLOCATION
@@ -482,7 +562,7 @@ typedef enum {
      * specified, global heap is used (just like dr_global_alloc())
      * and the \p drcontext parameter is ignored.  If it is specified,
      * thread-private heap specific to \p drcontext is used, just like
-     * dr_thread_alloc(). 
+     * dr_thread_alloc().
      */
     DR_ALLOC_THREAD_PRIVATE       = 0x0002,
     /**
@@ -577,7 +657,7 @@ void
 dr_global_free(void *mem, size_t size);
 
 /**
- * Allocates memory with the properties requested by \p flags.  
+ * Allocates memory with the properties requested by \p flags.
  *
  * If \p addr is non-NULL (only allowed with certain flags), it must
  * be page-aligned.
@@ -636,7 +716,7 @@ dr_nonheap_free(void *mem, size_t size);
  * thus is not kept separate from the application. Use of this memory is at the
  * client's own risk.
  *
- * Returns the actual address allocated or NULL if memory allocation at 
+ * Returns the actual address allocated or NULL if memory allocation at
  * preferred base fails.
  */
 void *
@@ -670,7 +750,7 @@ dr_raw_mremap(void *old_address, size_t old_size, size_t new_size,
 void *
 dr_raw_brk(void *new_address);
 
-/** 
+/**
  * Allocates memory from DR's global memory pool, but mimics the
  * behavior of malloc.  Memory must be freed with __wrap_free().  The
  * __wrap routines are intended to be used with ld's -wrap option to
@@ -683,7 +763,7 @@ dr_raw_brk(void *new_address);
 void *
 __wrap_malloc(size_t size);
 
-/** 
+/**
  * Reallocates memory from DR's global memory pool, but mimics the
  * behavior of realloc.  Memory must be freed with __wrap_free().  The
  * __wrap routines are intended to be used with ld's -wrap option; see
@@ -766,13 +846,13 @@ dr_query_memory(const byte *pc, byte **base_pc, size_t *size, uint *prot);
  */
 bool
 dr_query_memory_ex(const byte *pc, OUT dr_mem_info_t *info);
-#ifdef WINDOWS 
+#ifdef WINDOWS
 
 
 /**
  * Equivalent to the win32 API function VirtualQuery().
  * See that routine for a description of
- * arguments and return values.  \note Windows-only.
+ * arguments and return values.  \note Windows only.
   *
  * \note DR may mark writable code pages as read-only but pretend they're
  * writable.  When this happens, this routine will indicate that the
@@ -789,7 +869,7 @@ dr_virtual_query(const byte *pc, MEMORY_BASIC_INFORMATION *mbi, size_t mbi_size)
  * Safely reads \p size bytes from address \p base into buffer \p
  * out_buf.  Reading is done without the possibility of an exception
  * occurring.  Optionally returns the actual number of bytes copied
- * into \p bytes_read.  Returns true if successful.  
+ * into \p bytes_read.  Returns true if successful.
  * \note See also DR_TRY_EXCEPT().
  */
 bool
@@ -810,13 +890,13 @@ void
 dr_try_setup(void *drcontext, void **try_cxt);
 
 /** Do not call this directly: use the DR_TRY_EXCEPT macro instead. */
-int 
+int
 dr_try_start(void *buf);
 
 /** Do not call this directly: use the DR_TRY_EXCEPT macro instead. */
 void
 dr_try_stop(void *drcontext, void *try_cxt);
-/** 
+/**
  * Simple try..except support for executing operations that might
  * fault and recovering if they do.  Be careful with this feature
  * as it has some limitations:
@@ -930,7 +1010,7 @@ dr_unload_aux_library(dr_auxlib_handle_t lib);
  * is needed versus application 64-bit state.  Consider use of this routine
  * experimental: use at your own risk!
  *
- * \note Windows-only.
+ * \note Windows only.
  *
  * \note Currently this routine does not support loading kernel32.dll
  * or any library that depends on it.
@@ -948,7 +1028,7 @@ dr_load_aux_x64_library(const char *name);
  * NULL on failure.
  * The returned function can be called with dr_invoke_x64_routine().
  *
- * \note Windows-only.
+ * \note Windows only.
  *
  * \note Currently this routine does not support Windows 8.
  */
@@ -959,7 +1039,7 @@ dr_lookup_aux_x64_library_routine(dr_auxlib64_handle_t lib, const char *name);
  * Unloads the given library, which must have been loaded by
  * dr_load_aux_x64_library().  Returns whether successful.
  *
- * \note Windows-only.
+ * \note Windows only.
  */
 bool
 dr_unload_aux_x64_library(dr_auxlib64_handle_t lib);
@@ -984,7 +1064,7 @@ dr_unload_aux_x64_library(dr_auxlib64_handle_t lib);
  * 32-bit callback makes a system call.  Consider use of this routine
  * experimental: use at your own risk!
  *
- * \note Windows-only.
+ * \note Windows only.
  */
 int64
 dr_invoke_x64_routine(dr_auxlib64_routine_ptr_t func64, uint num_params, ...);
@@ -997,8 +1077,8 @@ dr_invoke_x64_routine(dr_auxlib64_routine_ptr_t func64, uint num_params, ...);
  */
 
 
-/** 
- * Initializes a mutex. 
+/**
+ * Initializes a mutex.
  *
  * Warning: there are restrictions on when DR-provided mutexes, and
  * locks in general, can be held by a client: no lock should be held
@@ -1185,7 +1265,9 @@ typedef struct _module_segment_data_t {
  * cast to an Elf32_Ehdr or Elf64_Ehdr. \note On Windows the start address can be cast to
  * an IMAGE_DOS_HEADER for use in finding the IMAGE_NT_HEADER and its OptionalHeader.
  * The OptionalHeader can be used to walk the module sections (among other things).
- * See WINNT.H. \note When accessing any memory inside the module (including header fields)
+ * See WINNT.H. \note On MacOS the start address can be cast to mach_header or
+ * mach_header_64.
+ * \note When accessing any memory inside the module (including header fields)
  * user is responsible for guarding against corruption and the possibility of the module
  * being unmapped.
  */
@@ -1195,9 +1277,13 @@ struct _module_data_t {
         module_handle_t handle; /**< module_handle for use with dr_get_proc_address() */
     } ; /* anonymous union of start address and module handle */
     /**
-     * Ending address of this module.  Note that on Linux the module may not
-     * be contiguous: there may be gaps containing other objects between start
-     * and end.  Use the segments array to examine each mapped region on Linux.
+     * Ending address of this module.  If the module is not contiguous
+     * (which is common on MacOS, and can happen on Linux), this is the
+     * highest address of the module, but there can be gaps in between start
+     * and end that are either unmapped or that contain other mappings or
+     * libraries.   Use the segments array to examine each mapped region,
+     * and use dr_module_contains_addr() as a convenience routine, rather than
+     * checking against [start..end).
      */
     app_pc end;
 
@@ -1225,6 +1311,12 @@ struct _module_data_t {
      * by the start address of each segment.
      */
     module_segment_data_t *segments;
+    uint timestamp;              /**< Timestamp from ELF Mach-O headers. */
+# ifdef MACOS
+    uint current_version;        /**< Current version from Mach-O headers. */
+    uint compatibility_version;  /**< Compatibility version from Mach-O headers. */
+    byte uuid[16];               /**< UUID from Mach-O headers. */
+# endif
 #endif
 };
 
@@ -1253,7 +1345,7 @@ module_data_t *
 dr_lookup_module_by_name(const char *name);
 
 /**
- * Looks up module data for the main executable.  
+ * Looks up module data for the main executable.
  * \note Returned module_data_t must be freed with dr_free_module_data().
  */
 module_data_t *
@@ -1312,6 +1404,14 @@ dr_free_module_data(module_data_t *data);
  */
 const char *
 dr_module_preferred_name(const module_data_t *data);
+
+/**
+ * Returns whether \p addr is contained inside any segment of the module \p data.
+ * We recommend using this routine rather than checking against the \p start
+ * and \p end fields of \p data, as modules are not always contiguous.
+ */
+bool
+dr_module_contains_addr(const module_data_t *data, app_pc addr);
 /**
  * Iterator over the list of modules that a given module imports from.  Created
  * by calling dr_module_import_iterator_start() and must be freed by calling
@@ -1606,10 +1706,100 @@ dr_get_proc_address_ex(module_handle_t lib, const char *name,
  * SYSTEM CALL PROCESSING ROUTINES
  */
 
+/**
+ * Data structure used to obtain or modify the result of an application
+ * system call by dr_syscall_get_result_ex() and dr_syscall_set_result_ex().
+ */
+typedef struct _dr_syscall_result_info_t {
+    /** The caller should set this to the size of the structure. */
+    size_t size;
+    /**
+     * Indicates whether the system call succeeded or failed.  For
+     * dr_syscall_set_result_ex(), this requests that DR set any
+     * additional machine state, if any, used by the particular
+     * plaform that is not part of \p value to indicate success or
+     * failure (e.g., on MacOS the carry flag is used to indicate
+     * success).
+     *
+     * For Windows, the success result from dr_syscall_get_result_ex()
+     * should only be relied upon for ntoskrnl system calls.  For
+     * other Windows system calls (such as win32k.sys graphical
+     * (NtGdi) or user (NtUser) system calls), computing success
+     * depends on each particular call semantics and is beyond the
+     * scope of this routine (consider using the "drsyscall" Extension
+     * instead).
+     *
+     * For Mach syscalls on MacOS, the success result from
+     * dr_syscall_get_result_ex() should not be relied upon.
+     * Computing success depends on each particular call semantics and
+     * is beyond the scope of this routine (consider using the
+     * "drsyscall" Extension instead).
+     */
+    bool succeeded;
+    /**
+     * The raw main value returned by the system call.
+     * See also the \p high field.
+     */
+    reg_t value;
+    /**
+     * On some platforms (such as MacOS), a 32-bit application's
+     * system call can return a 64-bit value.  For such calls,
+     * this field will hold the top 32 bit bits, if requested
+     * by \p use_high.  It is up to the caller to know which
+     * system calls have 64-bit return values.  System calls that
+     * return only 32-bit values do not clear the upper bits.
+     * Consider using the "drsyscall" Extension in order to obtain
+     * per-system-call semantic information, including return type.
+     */
+    reg_t high;
+    /**
+     * This should be set by the caller, and only applies to 32-bit
+     * system calls.  For dr_syscall_get_result_ex(), this requests
+     * that DR fill in the \p high field.  For
+     * dr_syscall_set_result_ex(), this requests that DR set the high
+     * 32 bits of the application-facing result to the value in the \p
+     * high field.
+     */
+    bool use_high;
+    /**
+     * This should be set by the caller.  For dr_syscall_get_result_ex(),
+     * this requests that DR fill in the \p errno_value field.
+     * For dr_syscall_set_result_ex(), this requests that DR set the
+     * \p value to indicate the particular error code in \p errno_value.
+     */
+    bool use_errno;
+    /**
+     * If requested by \p use_errno, if a system call fails (i.e., \p
+     * succeeded is false) dr_syscall_get_result_ex() will set this
+     * field to the absolute value of the error code returned (i.e.,
+     * on Linux, it will be inverted from what the kernel directly
+     * returns, in order to facilitate cross-platform clients that
+     * operate on both Linux and MacOS).  For Linux and Macos, when
+     * \p succeeded is true, \p errno_value is set to 0.
+     *
+     * If \p use_errno is set for dr_syscall_set_result_ex(), then
+     * this value will be stored as the system call's return value,
+     * negated if necessary for the underlying platform.  In that
+     * case, \p value will be ignored.
+     */
+    uint errno_value;
+} dr_syscall_result_info_t;
+
 
 /**
- * Usable only from a pre-syscall (dr_register_pre_syscall_event()) 
+ * Usable only from a pre-syscall (dr_register_pre_syscall_event())
  * event.  Returns the value of system call parameter number \p param_num.
+ *
+ * It is up to the caller to ensure that reading this parameter is
+ * safe: this routine does not know the number of parameters for each
+ * system call, nor does it check whether this might read off the base
+ * of the stack.
+ *
+ * \note On some platforms, notably MacOS, a 32-bit application's
+ * system call can still take a 64-bit parameter (typically on the
+ * stack).  In that situation, this routine will consider the 64-bit
+ * parameter to be split into high and low parts, each with its own
+ * parameter number.
  */
 reg_t
 dr_syscall_get_param(void *drcontext, int param_num);
@@ -1619,6 +1809,17 @@ dr_syscall_get_param(void *drcontext, int param_num);
  * event, or from a post-syscall (dr_register_post_syscall_event())
  * event when also using dr_syscall_invoke_another().  Sets the value
  * of system call parameter number \p param_num to \p new_value.
+ *
+ * It is up to the caller to ensure that writing this parameter is
+ * safe: this routine does not know the number of parameters for each
+ * system call, nor does it check whether this might write beyond the
+ * base of the stack.
+ *
+ * \note On some platforms, notably MacOS, a 32-bit application's
+ * system call can still take a 64-bit parameter (typically on the
+ * stack).  In that situation, this routine will consider the 64-bit
+ * parameter to be split into high and low parts, each with its own
+ * parameter number.
  */
 void
 dr_syscall_set_param(void *drcontext, int param_num, reg_t new_value);
@@ -1627,9 +1828,30 @@ dr_syscall_set_param(void *drcontext, int param_num, reg_t new_value);
  * Usable only from a post-syscall (dr_register_post_syscall_event())
  * event.  Returns the return value of the system call that will be
  * presented to the application.
+ *
+ * \note On some platforms (such as MacOS), a 32-bit application's
+ * system call can return a 64-bit value.  Use dr_syscall_get_result_ex()
+ * to obtain the upper bits in that case.
+ *
+ * \note On some platforms (such as MacOS), whether a system call
+ * succeeded or failed cannot be determined from the main result
+ * value.  Use dr_syscall_get_result_ex() to obtain the success result
+ * in such cases.
  */
 reg_t
 dr_syscall_get_result(void *drcontext);
+
+/**
+ * Usable only from a post-syscall (dr_register_post_syscall_event())
+ * event.  Returns whether it successfully retrieved the results
+ * of the system call into \p info.
+ *
+ * The caller should set the \p size, \p use_high, and \p use_errno fields
+ * of \p info prior to calling this routine.
+ * See the fields of #dr_syscall_result_info_t for details.
+ */
+bool
+dr_syscall_get_result_ex(void *drcontext, dr_syscall_result_info_t *info INOUT);
 
 /**
  * Usable only from a pre-syscall (dr_register_pre_syscall_event()) or
@@ -1637,9 +1859,25 @@ dr_syscall_get_result(void *drcontext);
  * For pre-syscall, should only be used when skipping the system call.
  * This sets the return value of the system call that the application sees
  * to \p value.
+ *
+ * \note On MacOS, do not use this function as it fails to set the
+ * carry flag and thus fails to properly indicate whether the system
+ * call succeeded or failed: use dr_syscall_set_result_ex() instead.
  */
 void
 dr_syscall_set_result(void *drcontext, reg_t value);
+
+/**
+ * Usable only from a pre-syscall (dr_register_pre_syscall_event()) or
+ * post-syscall (dr_register_post_syscall_event()) event.
+ * For pre-syscall, should only be used when skipping the system call.
+ *
+ * This sets the returned results of the system call as specified in
+ * \p info.  Returns whether it successfully did so.
+ * See the fields of #dr_syscall_result_info_t for details.
+ */
+bool
+dr_syscall_set_result_ex(void *drcontext, dr_syscall_result_info_t *info);
 
 /**
  * Usable only from a pre-syscall (dr_register_pre_syscall_event())
@@ -1682,14 +1920,14 @@ dr_syscall_invoke_another(void *drcontext);
  * fail once that limit is reached.
  *
  * @param[in] name      The system call name.  The name must match an exported
- *   system call wrapper in \p ntdll.dll.  
+ *   system call wrapper in \p ntdll.dll.
  * @param[in] sysnum    The system call number (the value placed in the eax register).
  * @param[in] num_args  The number of arguments to the system call.
  * @param[in] wow64_index  The value placed in the ecx register when this system
  *   call is executed in a WOW64 process.  This value should be obtainable
  *   by examining the system call wrapper.
  *
- * \note Windows-only.
+ * \note Windows only.
  */
 bool
 dr_syscall_intercept_natively(const char *name, int sysnum, int num_args,
@@ -1823,7 +2061,7 @@ void
 dr_flush_file(file_t f);
 
 /**
- * Writes \p count bytes from \p buf to file \p f.  
+ * Writes \p count bytes from \p buf to file \p f.
  * Returns the actual number written.
  */
 ssize_t
@@ -1937,7 +2175,7 @@ dr_map_file(file_t f, INOUT size_t *size, uint64 offs, app_pc addr, uint prot,
  *                   All pages overlapping with the range are unmapped.
  *
  * \note On Windows, the whole file will be unmapped instead.
- * 
+ *
  */
 bool
 dr_unmap_file(void *map, size_t size);
@@ -1958,31 +2196,31 @@ void
 dr_log(void *drcontext, uint mask, uint level, const char *fmt, ...);
 
 /* The log mask constants */
-#define LOG_NONE           0x00000000  /**< Log no data. */                              
-#define LOG_STATS          0x00000001  /**< Log per-thread and global statistics. */     
-#define LOG_TOP            0x00000002  /**< Log top-level information. */                
-#define LOG_THREADS        0x00000004  /**< Log data related to threads. */              
-#define LOG_SYSCALLS       0x00000008  /**< Log data related to system calls. */         
+#define LOG_NONE           0x00000000  /**< Log no data. */
+#define LOG_STATS          0x00000001  /**< Log per-thread and global statistics. */
+#define LOG_TOP            0x00000002  /**< Log top-level information. */
+#define LOG_THREADS        0x00000004  /**< Log data related to threads. */
+#define LOG_SYSCALLS       0x00000008  /**< Log data related to system calls. */
 #define LOG_ASYNCH         0x00000010  /**< Log data related to signals/callbacks/etc. */
-#define LOG_INTERP         0x00000020  /**< Log data related to app interpretation. */   
-#define LOG_EMIT           0x00000040  /**< Log data related to emitting code. */        
-#define LOG_LINKS          0x00000080  /**< Log data related to linking code. */         
+#define LOG_INTERP         0x00000020  /**< Log data related to app interpretation. */
+#define LOG_EMIT           0x00000040  /**< Log data related to emitting code. */
+#define LOG_LINKS          0x00000080  /**< Log data related to linking code. */
 #define LOG_CACHE          0x00000100  /**< Log data related to code cache management. */
-#define LOG_FRAGMENT       0x00000200  /**< Log data related to app code fragments. */   
+#define LOG_FRAGMENT       0x00000200  /**< Log data related to app code fragments. */
 #define LOG_DISPATCH       0x00000400  /**< Log data on every context switch dispatch. */
-#define LOG_MONITOR        0x00000800  /**< Log data related to trace building. */       
-#define LOG_HEAP           0x00001000  /**< Log data related to memory management. */     
+#define LOG_MONITOR        0x00000800  /**< Log data related to trace building. */
+#define LOG_HEAP           0x00001000  /**< Log data related to memory management. */
 #define LOG_VMAREAS        0x00002000  /**< Log data related to address space regions. */
-#define LOG_SYNCH          0x00004000  /**< Log data related to synchronization. */      
-#define LOG_MEMSTATS       0x00008000  /**< Log data related to memory statistics. */    
-#define LOG_OPTS           0x00010000  /**< Log data related to optimizations. */        
-#define LOG_SIDELINE       0x00020000  /**< Log data related to sideline threads. */ 
-#define LOG_SYMBOLS        0x00040000  /**< Log data related to app symbols. */ 
-#define LOG_RCT            0x00080000  /**< Log data related to indirect transfers. */ 
-#define LOG_NT             0x00100000  /**< Log data related to Windows Native API. */ 
-#define LOG_HOT_PATCHING   0x00200000  /**< Log data related to hot patching. */ 
-#define LOG_HTABLE         0x00400000  /**< Log data related to hash tables. */ 
-#define LOG_MODULEDB       0x00800000  /**< Log data related to the module database. */ 
+#define LOG_SYNCH          0x00004000  /**< Log data related to synchronization. */
+#define LOG_MEMSTATS       0x00008000  /**< Log data related to memory statistics. */
+#define LOG_OPTS           0x00010000  /**< Log data related to optimizations. */
+#define LOG_SIDELINE       0x00020000  /**< Log data related to sideline threads. */
+#define LOG_SYMBOLS        0x00040000  /**< Log data related to app symbols. */
+#define LOG_RCT            0x00080000  /**< Log data related to indirect transfers. */
+#define LOG_NT             0x00100000  /**< Log data related to Windows Native API. */
+#define LOG_HOT_PATCHING   0x00200000  /**< Log data related to hot patching. */
+#define LOG_HTABLE         0x00400000  /**< Log data related to hash tables. */
+#define LOG_MODULEDB       0x00800000  /**< Log data related to the module database. */
 #define LOG_ALL            0x00ffffff  /**< Log all data. */
 
 
@@ -2001,7 +2239,7 @@ bool
 dr_is_notify_on(void);
 
 /** Returns a handle to stdout. */
-file_t 
+file_t
 dr_get_stdout_file(void);
 
 /** Returns a handle to stderr. */
@@ -2011,10 +2249,10 @@ dr_get_stderr_file(void);
 /** Returns a handle to stdin. */
 file_t
 dr_get_stdin_file(void);
-#ifdef WINDOWS 
+#ifdef WINDOWS
 
 
-/** 
+/**
  * Displays a message in a pop-up window. \note Windows only. \note On Windows Vista
  * most Windows services are unable to display message boxes.
  */
@@ -2030,13 +2268,18 @@ dr_messagebox(const char *fmt, ...);
  * to the \p cmd window
  * unless dr_enable_console_printing() is called ahead of time, and
  * even then there are limitations: see dr_enable_console_printing().
- * \note On Windows, this routine does not support printing floating
- * point values.  Use dr_snprintf() instead.
+ * \note This routine supports printing wide characters via the ls
+ * or S format specifiers.  On Windows, they are assumed to be UTF-16,
+ * and are converted to UTF-8.  On Linux, they are converted by simply
+ * dropping the high-order bytes.
  * \note If the data to be printed is large it will be truncated to
  * an internal buffer size.  Use dr_snprintf() and dr_write_file() for
  * large output.
+ * \note When printing floating-point values, the caller's code should
+ * use proc_save_fpstate() or be inside a clean call that
+ * has requested to preserve the floating-point state.
  */
-void 
+void
 dr_printf(const char *fmt, ...);
 
 /**
@@ -2046,8 +2289,10 @@ dr_printf(const char *fmt, ...);
  * STDERR in the \p cmd window unless dr_enable_console_printing() is
  * called ahead of time, and even then there are limitations: see
  * dr_enable_console_printing().
- * \note On Windows, this routine does not support printing floating
- * point values.  Use dr_snprintf() instead.
+ * \note This routine supports printing wide characters via the ls
+ * or S format specifiers.  On Windows, they are assumed to be UTF-16,
+ * and are converted to UTF-8.  On Linux, they are converted by simply
+ * dropping the high-order bytes.
  * \note If the data to be printed is large it will be truncated to
  * an internal buffer size.  Use dr_snprintf() and dr_write_file() for
  * large output.
@@ -2056,8 +2301,10 @@ dr_printf(const char *fmt, ...);
  * \note When printing floating-point values, the caller's code should
  * use proc_save_fpstate() or be inside a clean call that
  * has requested to preserve the floating-point state.
+ * On success, the number of bytes written is returned.
+ * On error, -1 is returned.
  */
-void
+ssize_t
 dr_fprintf(file_t f, const char *fmt, ...);
 
 /**
@@ -2071,21 +2318,18 @@ dr_fprintf(file_t f, const char *fmt, ...);
  * If called later, it will fail.
  *
  * Without calling this routine, dr_printf() and dr_fprintf() will not
- * print anything in a console window on Windows 7 or earlier.
+ * print anything in a console window on Windows 7 or earlier, nor will they
+ * print anything when running a graphical application.
  *
  * Even after calling this routine, there are significant limitations
  * to console printing support in DR:
- * 
- *  - On Windows Vista and Windows 7, it does not work for
- *    64-bit applications.
- *  - On Windows versions prior to Vista, it does not work from
- *    the exit event.  Once the application terminates its state with
- *    csrss (toward the very end of ExitProcess), no output will show
- *    up on the console.  We have no good solution here yet as exiting
- *    early is not ideal.  Printing from the exit event works fine
- *    on Windows 8+.
- *  - It does not work at all from graphical applications, even when they are
- *    launched from a console.  This is true on Windows 8+ as well.
+ *
+ *  - On Windows 8.1, it does not work for graphical applications.
+ *  - On Windows versions prior to Vista, and for WOW64 applications
+ *    on Vista, it does not work from the exit event.  Once the
+ *    application terminates its state with csrss (toward the very end
+ *    of ExitProcess), no output will show up on the console.  We have
+ *    no good solution here yet as exiting early is not ideal.
  *  - In the future, with earliest injection (Issue 234), writing to the
  *    console may not work from the client init event on Windows 7 and
  *    earlier (it will work on Windows 8).
@@ -2100,6 +2344,7 @@ dr_fprintf(file_t f, const char *fmt, ...);
  * all of the above limitations.
  *
  * Returns whether successful.
+ * \note Windows only.
  */
 bool
 dr_enable_console_printing(void);
@@ -2112,6 +2357,7 @@ dr_enable_console_printing(void);
  * dr_enable_console_printing() is called ahead of time, and even then
  * there are limitations detailed in dr_enable_console_printing().
  * This routine may result in loading a private copy of kernel32.dll.
+ * \note Windows only.
  */
 bool
 dr_using_console(void);
@@ -2129,8 +2375,6 @@ dr_using_console(void);
  * or S format specifiers.  On Windows, they are assumed to be UTF-16,
  * and are converted to UTF-8.  On Linux, they are converted by simply
  * dropping the high-order bytes.
- * \note If the data to be printed is large it will be truncated to
- * an internal buffer size.
  * \note On Windows, you can use _snprintf() instead (though _snprintf() does
  * not support printing floating point values and does not convert
  * between UTF-16 and UTF-8).
@@ -2169,7 +2413,7 @@ dr_vsnwprintf(wchar_t *buf, size_t max, const wchar_t *fmt, va_list ap);
  * similar to the sscanf() C routine.
  *
  * @param[in] str   String to parse.
- * @param[in] fmt   Format string controlling parsing. 
+ * @param[in] fmt   Format string controlling parsing.
  * @param[out] ...  All remaining parameters interpreted as output parameter
  *                  pointers.  The type of each parameter must match the type
  *                  implied by the corresponding format specifier in \p fmt.
@@ -2234,11 +2478,11 @@ const char *
 dr_get_token(const char *str, char *buf, size_t buflen);
 
 /** Prints \p msg followed by the instruction \p instr to file \p f. */
-void 
+void
 dr_print_instr(void *drcontext, file_t f, instr_t *instr, const char *msg);
 
 /** Prints \p msg followed by the operand \p opnd to file \p f. */
-void 
+void
 dr_print_opnd(void *drcontext, file_t f, opnd_t opnd, const char *msg);
 
 /**************************************************
@@ -2247,13 +2491,13 @@ dr_print_opnd(void *drcontext, file_t f, opnd_t opnd, const char *msg);
 
 
 /**
- * Returns the DR context of the current thread. 
+ * Returns the DR context of the current thread.
  */
 void *
 dr_get_current_drcontext(void);
 
 /** Returns the thread id of the thread with drcontext \p drcontext. */
-thread_id_t 
+thread_id_t
 dr_get_thread_id(void *drcontext);
 #ifdef WINDOWS
 
@@ -2266,6 +2510,7 @@ dr_get_thread_id(void *drcontext);
  * at that point.
  *
  * The handle should have THREAD_ALL_ACCESS privileges.
+ * \note Windows only.
  */
 HANDLE
 dr_get_dr_thread_handle(void *drcontext);
@@ -2280,12 +2525,12 @@ dr_get_dr_thread_handle(void *drcontext);
 void *
 dr_get_tls_field(void *drcontext);
 
-/** 
+/**
  * Sets the user-controlled thread-local-storage field.  To
  * generate an instruction sequence that reads the drcontext field
  * inline in the code cache, use dr_insert_write_tls_field().
  */
-void 
+void
 dr_set_tls_field(void *drcontext, void *value);
 
 /**
@@ -2293,7 +2538,7 @@ dr_set_tls_field(void *drcontext, void *value);
  * It can be used to get the base of thread-local storage segment
  * used by #dr_raw_tls_calloc.
  *
- * \note It should not be called on thread exit event, 
+ * \note It should not be called on thread exit event,
  * as the thread exit event may be invoked from other threads.
  * See #dr_register_thread_exit_event for details.
  */
@@ -2310,7 +2555,7 @@ dr_get_dr_segment_base(IN reg_id_t segment_register);
  * and the client tls field (dr_get_tls_field()).
  * Returns whether or not the slots were successfully obtained.
  * The segment base pointed at \p segment_register can be obtained
- * using #dr_get_dr_segment_base. 
+ * using #dr_get_dr_segment_base.
  *
  * \note These slots are useful for thread-shared code caches.  With
  * thread-private caches, DR's memory pools are guaranteed to be
@@ -2625,11 +2870,11 @@ dr_delete_fragment(void *drcontext, void *tag);
  *
  * \note dr_delay_flush_region() has fewer restrictions on use, but is less synchronous.
  *
- * \note Use \p size == 1 to flush fragments containing the instruction at address 
+ * \note Use \p size == 1 to flush fragments containing the instruction at address
  * \p start. A flush of \p size == 0 is not allowed.
  *
  * \note As currently implemented, dr_delay_flush_region() with no completion callback
- * routine specified can be substantially more performant. 
+ * routine specified can be substantially more performant.
  */
 bool
 dr_flush_region(app_pc start, size_t size);
@@ -2651,7 +2896,7 @@ dr_flush_region(app_pc start, size_t size);
  * \note This routine may not be called while any locks are held that could block a thread
  * processing a registered event callback or cache callout.
  * \note dr_delay_flush_region() has fewer restrictions on use, but is less synchronous.
- * \note Use \p size == 1 to flush fragments containing the instruction at address 
+ * \note Use \p size == 1 to flush fragments containing the instruction at address
  * \p start. A flush of \p size == 0 is not allowed.
  * \note This routine is only available with either the -thread_private
  * or -enable_full_api options.  It is not available when -opt_memory is specified.
@@ -2660,20 +2905,20 @@ bool
 dr_unlink_flush_region(app_pc start, size_t size);
 
 /**
- * Request a flush of all fragments containing code from the region 
- * [\p start, \p start + \p size).  The flush will be performed at the next safe 
- * point in time (usually before any new code is added to the cache after this 
- * routine is called). If \p flush_completion_callback is non-NULL, it will be 
- * called with the \p flush_id provided to this routine when the flush completes, 
- * after which no execution will occur out of the fragments flushed. Returns true 
+ * Request a flush of all fragments containing code from the region
+ * [\p start, \p start + \p size).  The flush will be performed at the next safe
+ * point in time (usually before any new code is added to the cache after this
+ * routine is called). If \p flush_completion_callback is non-NULL, it will be
+ * called with the \p flush_id provided to this routine when the flush completes,
+ * after which no execution will occur out of the fragments flushed. Returns true
  * if the flush was successfully queued.
  *
  * \note dr_flush_region() and dr_unlink_flush_region() can give stronger guarantees on
  * when the flush will occur, but have more restrictions on use.
- * \note Use \p size == 1 to flush fragments containing the instruction at address 
+ * \note Use \p size == 1 to flush fragments containing the instruction at address
  * \p start.  A flush of \p size == 0 is not allowed.
  * \note As currently implemented there may be a performance penalty for requesting a
- * \p flush_completion_callback; for most performant usage set 
+ * \p flush_completion_callback; for most performant usage set
  * \p flush_completion_callback to NULL.
  */
 bool
@@ -2816,11 +3061,11 @@ dr_switch_to_dr_state_ex(void *drcontext, dr_state_flags_t flags);
  * to end the trace.  (The callback will be called both for
  * standard DR traces and for client-defined traces.)
  *
- * \note Some fragments are unsuitable for trace heads. DR will 
+ * \note Some fragments are unsuitable for trace heads. DR will
  * ignore attempts to mark such fragments as trace heads and will return
  * false. If the client marks a fragment that doesn't exist yet as a trace
  * head and DR later determines that the fragment is unsuitable for
- * a trace head it will unmark the fragment as a trace head without 
+ * a trace head it will unmark the fragment as a trace head without
  * notifying the client.
  *
  * \note Some fragments' notion of trace heads is dependent on
@@ -2916,7 +3161,7 @@ typedef struct _tracedump_stub_data {
               * the file, which indicates the linkcount size. */
     /** Code for exit stubs.  Only present if:
      *   stub_pc < cache_start_pc ||
-     *   stub_pc >= cache_start_pc+code_size). 
+     *   stub_pc >= cache_start_pc+code_size).
      * The actual size of the array varies and is indicated by the stub_size field.
      */
     byte stub_code[1/*variable-sized*/];

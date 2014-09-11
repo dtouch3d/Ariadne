@@ -1,22 +1,22 @@
 /* **********************************************************
- * Copyright (c) 2011 Google, Inc.  All rights reserved.
+ * Copyright (c) 2011-2014 Google, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of Google, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -60,7 +60,9 @@ static void wrap_pre(void *wrapcxt, OUT void **user_data);
 static void wrap_post(void *wrapcxt, void *user_data);
 
 static size_t max_malloc;
+#ifdef SHOW_RESULTS
 static uint malloc_oom;
+#endif
 static void *max_lock; /* to synch writes to max_malloc */
 
 static
@@ -88,9 +90,10 @@ void module_load_event(void *drcontext, const module_data_t *mod, bool loaded)
     }
 }
 
-DR_EXPORT void 
+DR_EXPORT void
 dr_init(client_id_t id)
 {
+    dr_set_client_name("DynamoRIO Sample Client 'wrap'", "http://dynamorio.org/issues");
     /* make it easy to tell, by looking at log file, which client executed */
     dr_log(NULL, LOG_ALL, 1, "Client 'wrap' initializing\n");
     /* also give notification to stderr */
@@ -109,7 +112,7 @@ dr_init(client_id_t id)
     max_lock = dr_mutex_create();
 }
 
-static void 
+static void
 event_exit(void)
 {
 #ifdef SHOW_RESULTS
@@ -145,6 +148,7 @@ wrap_pre(void *wrapcxt, OUT void **user_data)
 static void
 wrap_post(void *wrapcxt, void *user_data)
 {
+#ifdef SHOW_RESULTS /* we want determinism in our test suite */
     size_t sz = (size_t) user_data;
     /* test out-of-memory by having a random moderately-large alloc fail */
     if (sz > 1024 && dr_get_random_value(1000) < 10) {
@@ -154,5 +158,6 @@ wrap_post(void *wrapcxt, void *user_data)
         malloc_oom++;
         dr_mutex_unlock(max_lock);
     }
+#endif
 }
 

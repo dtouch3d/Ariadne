@@ -1,5 +1,5 @@
 /* **********************************************************
- * Copyright (c) 2010-2012 Google, Inc.   All rights reserved.
+ * Copyright (c) 2010-2014 Google, Inc.   All rights reserved.
  * **********************************************************/
 
 /* drwrap: DynamoRIO Function Wrapping and Replacing Extension
@@ -7,7 +7,7 @@
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; 
+ * License as published by the Free Software Foundation;
  * version 2.1 of the License, and no later version.
 
  * This library is distributed in the hope that it will be useful,
@@ -196,6 +196,10 @@ DR_EXPORT
  * other machine state.  Usually it is good practice to call
  * dr_switch_to_app_state() inside the replacement code, and then
  * dr_switch_to_dr_state() before returning, in particular on Windows.
+ * To additionally use a clean DR stack, consider using
+ * dr_call_on_clean_stack() from the initial replacement layer (which
+ * allows the outer layer to handle stdcall, which
+ * dr_call_on_clean_stack does not support).
  *
  * The replacement code is not allowed to invoke dr_flush_region() or
  * dr_delete_fragment() as it has no #dr_mcontext_t with which to
@@ -215,7 +219,7 @@ DR_EXPORT
  *   calling convention used by \p original.
  * @param[in] user_data  Data made available when \p replacement is
  *   executed.
- * @param[in] override  Whether to replace any existing replacement for \p 
+ * @param[in] override  Whether to replace any existing replacement for \p
  *   original.
  *
  * \note The mechanism used for a native replacement results in a \p
@@ -270,6 +274,13 @@ DR_EXPORT
  * by calling \p pre_func_cb prior to every invocation of \p original
  * and calling \p post_func_cb after every invocation of \p original.
  * One of the callbacks can be NULL, but not both.
+ *
+ * Wrap requests should normally be made up front during process
+ * initialization or module load (see
+ * dr_register_module_load_event()).  If a wrap request is made after
+ * the target code may have already been executed by the application,
+ * the caller should flush the target code from the cache using the
+ * desired flush method after issuing the wrap request.
  *
  * Multiple wrap requests are allowed for one \p original function
  * (unless #DRWRAP_NO_FRILLS is set).

@@ -1,20 +1,20 @@
 var drwrap_8h =
 [
-    [ "dr_get_tls_field", "drwrap_8h.html#ga0d6964a67aa0fe1840aa7de8cdf0fe1b", null ],
-    [ "dr_insert_read_tls_field", "drwrap_8h.html#gabb0fa2849dd0255e439794c6a212128c", null ],
-    [ "dr_insert_write_tls_field", "drwrap_8h.html#ga273efb4ea5e7639e3d99ecbb2aa20cde", null ],
-    [ "dr_register_bb_event", "drwrap_8h.html#gafbb34fa9edfe77b770d2a711730bde47", null ],
-    [ "dr_register_thread_exit_event", "drwrap_8h.html#ga117f696de6000f4a193cf6baa899da86", null ],
-    [ "dr_register_thread_init_event", "drwrap_8h.html#ga2cc9b226cbc2a7f52cf46e370f99974c", null ],
-    [ "dr_set_tls_field", "drwrap_8h.html#gab859ebbb56a4335bd867a1f787ec9a2c", null ],
-    [ "dr_unregister_bb_event", "drwrap_8h.html#gae9543df1280c570b13d8359914a505f2", null ],
-    [ "dr_unregister_thread_exit_event", "drwrap_8h.html#ga637b3f9fe54ba79aaf247d94b96b56bc", null ],
-    [ "dr_unregister_thread_init_event", "drwrap_8h.html#ga78b8415a55d22fa08603b3c1e18f568f", null ],
     [ "DRMGR_PRIORITY_NAME_DRWRAP", "drwrap_8h.html#ga925e96b9b70bcf935279bfd79dbe6c7f", null ],
     [ "DRWRAP_REPLACE_NATIVE_DATA_SLOT", "drwrap_8h.html#ga0f9e93e3ba51cc96470fd261eaa55273", null ],
     [ "DRWRAP_REPLACE_NATIVE_SP_SLOT", "drwrap_8h.html#gad88566adce8386b5d2e6c6de83e21e8b", null ],
-    [ "drwrap_global_flags_t", "drwrap_8h.html#gab82c71baab4fe0c5f9962383818b9c92", null ],
-    [ "drwrap_wrap_flags_t", "drwrap_8h.html#ga16cc419209fcb0024d010599bb82aa76", null ],
+    [ "DRMGR_PRIORITY_APP2APP_DRWRAP", "drwrap_8h.html#gga4caf8d8f829279fba122163d961608a4a556c6bce97b9c415e089261848536c14", null ],
+    [ "DRMGR_PRIORITY_INSERT_DRWRAP", "drwrap_8h.html#gga4caf8d8f829279fba122163d961608a4ada17e11e67b93129fede7890e032bbbd", null ],
+    [ "DRMGR_PRIORITY_FAULT_DRWRAP", "drwrap_8h.html#gga4caf8d8f829279fba122163d961608a4af45be46f89c86ce07739c8243fde7f5d", null ],
+    [ "drwrap_global_flags_t", "drwrap_8h.html#gab82c71baab4fe0c5f9962383818b9c92", [
+      [ "DRWRAP_SAFE_READ_RETADDR", "drwrap_8h.html#ggab82c71baab4fe0c5f9962383818b9c92af1b2f3860316577a15e3430942febc8a", null ],
+      [ "DRWRAP_SAFE_READ_ARGS", "drwrap_8h.html#ggab82c71baab4fe0c5f9962383818b9c92ab7a628a50b1344c943a703a72e5cfce9", null ],
+      [ "DRWRAP_NO_FRILLS", "drwrap_8h.html#ggab82c71baab4fe0c5f9962383818b9c92aeb299993e17993cb86912f93391f6b86", null ],
+      [ "DRWRAP_FAST_CLEANCALLS", "drwrap_8h.html#ggab82c71baab4fe0c5f9962383818b9c92add150e3e7ba4ee203a045b936f872b4b", null ]
+    ] ],
+    [ "drwrap_wrap_flags_t", "drwrap_8h.html#ga16cc419209fcb0024d010599bb82aa76", [
+      [ "DRWRAP_UNWIND_ON_EXCEPTION", "drwrap_8h.html#gga16cc419209fcb0024d010599bb82aa76aaee35c5aabcb42793293b905c448e1c6", null ]
+    ] ],
     [ "drwrap_exit", "drwrap_8h.html#ga0e58babc53301c4ade4027dc1e09a088", null ],
     [ "drwrap_get_arg", "drwrap_8h.html#ga3d0864daf1ec37a91640a739f8928b83", null ],
     [ "drwrap_get_drcontext", "drwrap_8h.html#ga92584c3e1980ac0c467de7d14d2bc2a2", null ],

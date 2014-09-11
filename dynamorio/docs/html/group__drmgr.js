@@ -1,14 +1,32 @@
 var group__drmgr =
 [
-    [ "_drmgr_priority_t", "struct__drmgr__priority__t.html", null ],
-    [ "DRMGR_PRIORITY_NAME_CLS", "group__drmgr.html#gab10ae65ed82d0358b782d9769fa97381", null ],
+    [ "_drmgr_priority_t", "struct__drmgr__priority__t.html", [
+      [ "DRX_COUNTER_64BIT", "group__drx.html#ggab48899087cc647f0f791ed0c459adc53a507636af18a8858c214066682d013a1a", null ],
+      [ "DRX_COUNTER_LOCK", "group__drx.html#ggab48899087cc647f0f791ed0c459adc53aa45e32a1d62398b84858de6759364688", null ],
+      [ "after", "struct__drmgr__priority__t.html#a6e2a6f18a1154c92864b80863e49a4a6", null ],
+      [ "before", "struct__drmgr__priority__t.html#ac73be551eedc5f37043fb752b30eec32", null ],
+      [ "name", "struct__drmgr__priority__t.html#a09b4d7a1ceecaa5840c722c44f4ba84d", null ],
+      [ "priority", "struct__drmgr__priority__t.html#a2e46fa4cbefc2dc32f3bc73e8bd82d3e", null ],
+      [ "struct_size", "struct__drmgr__priority__t.html#a29c2e76e5d788b7d773df7ca04044293", null ]
+    ] ],
+    [ "DRMGR_PRIORITY_NAME_CLS_ENTRY", "group__drmgr.html#ga2f4d0660d151db533782a167a03a5696", null ],
+    [ "DRMGR_PRIORITY_NAME_CLS_EXIT", "group__drmgr.html#ga3c1bc6cda7eaedf679cee9e207193ef3", null ],
     [ "drmgr_analysis_cb_t", "group__drmgr.html#ga01c9afbdf3843c508d1b4c486f2f4f19", null ],
     [ "drmgr_app2app_ex_cb_t", "group__drmgr.html#gacb8f7568c015abb3c26c78983bb7c533", null ],
     [ "drmgr_ilist_ex_cb_t", "group__drmgr.html#ga434156c1ee1f2d695f8d897ede5afa50", null ],
     [ "drmgr_insertion_cb_t", "group__drmgr.html#ga17d7b1dae48792e4cc8b5b751850ac83", null ],
     [ "drmgr_priority_t", "group__drmgr.html#ga85630d78f521678da499f26dc5cda5aa", null ],
-    [ "drmgr_xform_cb_t", "group__drmgr.html#ga20cf573c904b2885a2b65d5d3db42847", null ],
-    [ "drmgr_bb_phase_t", "group__drmgr.html#gae3531e42d6cde87d19a63801ab6b9230", null ],
+    [ "drmgr_xform_cb_t", "group__drmgr.html#ga20cf573c904b2885a2b65d5d3db42847", [
+      [ "DRMGR_PRIORITY_INSERT_CLS_ENTRY", "group__drmgr.html#gga458e651af6690959efa2afb96be7d609add063e5cb4ba9119fe2583d6088d7174", null ],
+      [ "DRMGR_PRIORITY_INSERT_CLS_EXIT", "group__drmgr.html#gga458e651af6690959efa2afb96be7d609a3ea29c4c2dcc8e8b7cabf5b39fd5c179", null ]
+    ] ],
+    [ "drmgr_bb_phase_t", "group__drmgr.html#gae3531e42d6cde87d19a63801ab6b9230", [
+      [ "DRMGR_PHASE_NONE", "group__drmgr.html#ggae3531e42d6cde87d19a63801ab6b9230ae5168599a479256d3b95839f57e5b985", null ],
+      [ "DRMGR_PHASE_APP2APP", "group__drmgr.html#ggae3531e42d6cde87d19a63801ab6b9230a7eb5e7bcc7f6d533bcb8dcc10389441e", null ],
+      [ "DRMGR_PHASE_ANALYSIS", "group__drmgr.html#ggae3531e42d6cde87d19a63801ab6b9230a242a4f07729fd4b18c296263a7308faf", null ],
+      [ "DRMGR_PHASE_INSERTION", "group__drmgr.html#ggae3531e42d6cde87d19a63801ab6b9230a71f2ee3487696c6f969b06920b883dee", null ],
+      [ "DRMGR_PHASE_INSTRU2INSTRU", "group__drmgr.html#ggae3531e42d6cde87d19a63801ab6b9230ad4dab0dd27bdccf8b9d70727c9da5792", null ]
+    ] ],
     [ "drmgr_current_bb_phase", "group__drmgr.html#ga75f5e22831cb18cb7fbb8316cd56f09f", null ],
     [ "drmgr_decode_sysnum_from_wrapper", "group__drmgr.html#ga357735ce7daa0bb717556455f20040a5", null ],
     [ "drmgr_exit", "group__drmgr.html#ga1e27214f63289548497d25c9e628a5d7", null ],

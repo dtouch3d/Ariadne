@@ -1,22 +1,22 @@
 # **********************************************************
-# Copyright (c) 2011-2013 Google, Inc.    All rights reserved.
+# Copyright (c) 2011-2014 Google, Inc.    All rights reserved.
 # Copyright (c) 2009-2010 VMware, Inc.    All rights reserved.
 # **********************************************************
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of VMware, Inc. nor the names of its contributors may be
 #   used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -241,8 +241,8 @@ if(NOT DEFINED PROCESSOR_COUNT)
   if(APPLE)
     find_program(cmd_sys_pro "system_profiler")
     if(cmd_sys_pro)
-      execute_process(COMMAND ${cmd_sys_pro} OUTPUT_VARIABLE info)
-      string(REGEX REPLACE "^.*Total Number Of Cores: ([0-9]+).*$" "\\1"
+      execute_process(COMMAND ${cmd_sys_pro} SPHardwareDataType OUTPUT_VARIABLE info)
+      string(REGEX REPLACE "^.*Total Number [Oo]f Cores: ([0-9]+).*$" "\\1"
         PROCESSOR_COUNT "${info}")
     endif()
   endif()
@@ -259,7 +259,7 @@ math(EXPR PROCESSOR_COUNT "${PROCESSOR_COUNT} + 2")
 
 # CTest goes and does our builds and then wants to configure
 # and build again and complains there's no top-level setting of
-# CTEST_BINARY_DIRECTORY: 
+# CTEST_BINARY_DIRECTORY:
 #   "CMake Error: Some required settings in the configuration file were missing:"
 # but we don't want to do another build so we just ignore the error.
 set(CTEST_CMAKE_COMMAND "${CMAKE_EXECUTABLE_NAME}")
@@ -321,29 +321,12 @@ else ()
   if (arg_generator)
     set(vs_generator ${arg_generator})
   else ()
-    # Prefer the most recent version that's installed.  The user can use
-    # generator= to request an older version.
-    get_filename_component(vs_dir [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\11.0\\Setup\\VS;ProductDir] REALPATH)
-    # on failure getting weird results: "c:/registry", so we assume will have Studio
-    if ("${vs_dir}" MATCHES "Studio")
-      set(vs_generator "Visual Studio 11")
-    else ()
-      get_filename_component(vs_dir [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\10.0\\Setup\\VS;ProductDir] REALPATH)
-      if ("${vs_dir}" MATCHES "Studio")
-        set(vs_generator "Visual Studio 10")
-      else ()
-        get_filename_component(vs_dir [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\9.0\\Setup\\VS;ProductDir] REALPATH)
-        if ("${vs_dir}" MATCHES "Studio")
-          set(vs_generator "Visual Studio 9 2008")
-        else ()
-          get_filename_component(vs_dir [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\8.0\\Setup\\VS;ProductDir] REALPATH)
-          if ("${vs_dir}" MATCHES "Studio")
-            set(vs_generator "Visual Studio 8 2005")
-          else ()
-            message(FATAL_ERROR "Cannot determine Visual Studio version")
-          endif ()
-        endif ()
-      endif ()
+    set(vs_generator "NOTFOUND")
+    get_filename_component(current_directory_path "${CMAKE_CURRENT_LIST_FILE}" PATH)
+    include(${current_directory_path}/lookup_visualstudio.cmake)
+    get_visualstudio_info(vs_dir vs_version vs_generator)
+    if (NOT vs_generator)
+      message(FATAL_ERROR "Cannot determine Visual Studio version")
     endif ()
   endif ()
   message("Using ${vs_generator} generators")
@@ -392,7 +375,7 @@ endfunction(get_default_config)
 #   - returns the build dir in "last_package_build_dir"
 #   - prepends to "cpack_projects" for project "${cpack_project_name}"
 #     (set by outer file)
-function(testbuild_ex name is64 initial_cache test_only_in_long 
+function(testbuild_ex name is64 initial_cache test_only_in_long
     add_to_package build_args)
   set(CTEST_BUILD_NAME "${name}")
 
@@ -466,10 +449,15 @@ function(testbuild_ex name is64 initial_cache test_only_in_long
         if (NOT "$ENV{LIB}" MATCHES "[Aa][Mm][Dd]64")
           # Note that we can't set ENV{PATH} as the output var of the replace:
           # it has to be its own set().
-          string(REGEX REPLACE "VC([/\\\\])([Bb][Ii][Nn])" "VC\\1\\2\\1amd64"
+          #
+          # i#1421: VS2013 needs base VC/bin on the path (for cross-compiler
+          # used by cmake) so we duplicate and put amd64 first.  Older VS needs
+          # Common7/IDE instead which should already be elsewhere on path.
+          string(REGEX REPLACE "((^|;)[^;]*)VC([/\\\\])([Bb][Ii][Nn])"
+            "\\1VC\\3\\4\\3amd64;\\1VC\\3\\4"
             newpath "$ENV{PATH}")
           # VS2008's SDKs/Windows/v{6.0A,7.0} uses "x64" instead of "amd64"
-          string(REGEX REPLACE "(v[^/\\\\]*)([/\\\\])([Bb][Ii][Nn])" "\\1\\2\\3\\2x64" 
+          string(REGEX REPLACE "(v[^/\\\\]*)([/\\\\])([Bb][Ii][Nn])" "\\1\\2\\3\\2x64"
             newpath "${newpath}")
           if (arg_verbose)
             message("Env setup: setting PATH to ${newpath}")
@@ -479,11 +467,11 @@ function(testbuild_ex name is64 initial_cache test_only_in_long
             newlib "$ENV{LIB}")
           # VS2008's SDKs/Windows/v{6.0A,7.0} uses "x64" instead of "amd64": grrr
           string(REGEX REPLACE "(v[^/\\\\]*[/\\\\][Ll][Ii][Bb][/\\\\])[Aa][Mm][Dd]64"
-            "\\1x64" 
+            "\\1x64"
             newlib "${newlib}")
-          # Win8 SDK uses um/x86 and um/x64
+          # Win8 SDK uses um/x86 and um/x64 after "Lib/win{8,v6.3}/"
           string(REGEX REPLACE
-            "([Ll][Ii][Bb])[/\\\\]amd64([/\\\\][Ww][Ii][Nn]8[/\\\\]um[/\\\\])x86"
+            "([Ll][Ii][Bb])[/\\\\]amd64([/\\\\][Ww][Ii][Nn][v0-9.]+[/\\\\]um[/\\\\])x86"
             "\\1\\2x64" newlib "${newlib}")
           if (arg_verbose)
             message("Env setup: setting LIB to ${newlib}")
@@ -499,8 +487,9 @@ function(testbuild_ex name is64 initial_cache test_only_in_long
       else (is64)
         set(ENV{ASM} "ml")
         if ("$ENV{LIB}" MATCHES "[Aa][Mm][Dd]64")
-          string(REGEX REPLACE "(VC[/\\\\][Bb][Ii][Nn][/\\\\])[Aa][Mm][Dd]64" "\\1"
-            newpath "$ENV{PATH}")
+          # Remove the duplicate we added (see i#1421 comment above).
+          string(REGEX REPLACE "((^|;)[^;]*)VC[/\\\\][Bb][Ii][Nn][/\\\\][Aa][Mm][Dd]64"
+            "" newpath "$ENV{PATH}")
           if (arg_verbose)
             message("Env setup: setting PATH to ${newpath}")
           endif ()
@@ -636,7 +625,7 @@ function(testbuild_ex name is64 initial_cache test_only_in_long
     set(last_package_build_dir "${CTEST_BINARY_DIRECTORY}" PARENT_SCOPE)
     # prepend rather than append to get debug first, so we take release
     # files preferentially in case of overlap
-    set(cpack_projects 
+    set(cpack_projects
       "\"${CTEST_BINARY_DIRECTORY};${cpack_project_name};ALL;/\"\n  ${cpack_projects}"
       PARENT_SCOPE)
 

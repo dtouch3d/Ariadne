@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -50,6 +50,7 @@
 #include <math.h> /* for floating-point math constants */
 
 #include "dr_ir_opnd.h"
+#include "dr_ir_instr.h"
 #include "dr_ir_utils.h"
 
 /* instruction modification convenience routines */
@@ -92,7 +93,7 @@
 /** Create an absolute address operand. */
 # define OPND_CREATE_ABSMEM(addr, size) \
   opnd_create_abs_addr(addr, size)
-#endif 
+#endif
 
 #ifdef X64
 /** Create an 8-byte immediate integer operand. */
@@ -2523,7 +2524,7 @@
  * opcode OP_xxx and the given explicit register operand, automatically
  * supplying any implicit operands.
  * \param dc The void * dcontext used to allocate memory for the instr_t.
- * \param f The opnd_t explicit destination + source operand for the instruction, which 
+ * \param f The opnd_t explicit destination + source operand for the instruction, which
  * must be a floating point register (opnd_create_reg()).
  */
 #define INSTR_CREATE_faddp(dc, f) \
@@ -3375,7 +3376,7 @@
     opnd_create_reg(DR_REG_XSI), \
     opnd_create_far_base_disp(DR_SEG_DS, DR_REG_XSI, DR_REG_NULL, 0, 0, \
       OPSZ_8_short2), \
-    opnd_create_reg(DR_REG_XSI)) 
+    opnd_create_reg(DR_REG_XSI))
 #define INSTR_CREATE_movs_1(dc) \
   instr_create_3dst_3src((dc), OP_movs, \
     opnd_create_far_base_disp(DR_SEG_ES, DR_REG_XDI, DR_REG_NULL, 0, 0, OPSZ_1), \
@@ -3638,10 +3639,10 @@
 /** @name 2 destinations: 1 implicit, 3 sources: 1 implicit */
 /* @{ */ /* doxygen start group; w/ DISTRIBUTE_GROUP_DOC=YES, one comment suffices. */
 /**
- * This INSTR_CREATE_xxx_1 or INSTR_CREATE_xxx_4 macro creates an
+ * This INSTR_CREATE_xxx_1, INSTR_CREATE_xxx_4, or INSTR_CREATE_xxx_8 macro creates an
  * instr_t with opcode OP_xxx and the given explicit operands, automatically
- * supplying any implicit operands.    The _1 or _4 suffixes distinguish between
- * alternative forms of the same opcode (1 and 4 identify the operand size).
+ * supplying any implicit operands.    The _1, _4, or _8 suffixes distinguish between
+ * alternative forms of the same opcode with the given operand size.
  * \param dc The void * dcontext used to allocate memory for the instr_t.
  * \param d The opnd_t explicit destination operand for the instruction.
  * \param s The opnd_t explicit source operand for the instruction.
@@ -3652,6 +3653,9 @@
 #define INSTR_CREATE_cmpxchg_4(dc, d, s) \
   instr_create_2dst_3src((dc), OP_cmpxchg, (d), opnd_create_reg(DR_REG_EAX), (s), (d), \
     opnd_create_reg(DR_REG_EAX))
+#define INSTR_CREATE_cmpxchg_8(dc, d, s) \
+  instr_create_2dst_3src((dc), OP_cmpxchg, (d), opnd_create_reg(DR_REG_RAX), (s), (d), \
+    opnd_create_reg(DR_REG_RAX))
 /* @} */ /* end doxygen group */
 
 /* 2 implicit destinations, 3 implicit sources */
@@ -3758,7 +3762,7 @@
  * but we stick with these as our tools (mainly windbg) don't understand
  * the OP_nop_modrm encoding (though should work on PPro+).
  * AMD recommends 0x66 0x66 ... 0x90 for older processors.
- * \param dc The void * dcontext used to allocate memory for the instr_t.
+ * \param dcontext The void * dcontext used to allocate memory for the instr_t.
  * \param reg A reg_id_t (NOT opnd_t) to use as source and destination.
  * For 64-bit mode, use a 64-bit register, but NOT rbp or rsp for the 3-byte form.
  */
@@ -3792,7 +3796,7 @@ INSTR_CREATE_nop2byte_reg(void *dcontext, reg_id_t reg)
 #endif
 }
 /* lea's target is 32-bit but address register is 64: so we eliminate the
- * displacement and put in rex.w 
+ * displacement and put in rex.w
  */
 static inline instr_t *
 INSTR_CREATE_nop3byte_reg(void *dcontext, reg_id_t reg)

@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,10 +36,10 @@
 
 
 /** Returns true iff \p instr can be encoding as a valid IA-32 instruction. */
-bool 
+bool
 instr_is_encoding_possible(instr_t *instr);
 
-/** 
+/**
  * Encodes \p instr into the memory at \p pc.
  * Uses the x86/x64 mode stored in instr, not the mode of the current thread.
  * Returns the pc after the encoded instr, or NULL if the encoding failed.
@@ -49,10 +49,10 @@ instr_is_encoding_possible(instr_t *instr);
  * x86 instructions can occupy up to 17 bytes, so the caller should ensure
  * the target location has enough room to avoid overflow.
  */
-byte * 
+byte *
 instr_encode(void *drcontext, instr_t *instr, byte *pc);
 
-/** 
+/**
  * Encodes \p instr into the memory at \p copy_pc in preparation for copying
  * to \p final_pc.  Any pc-relative component is encoded as though the
  * instruction were located at \p final_pc.  This allows for direct copying
@@ -66,7 +66,7 @@ instr_encode(void *drcontext, instr_t *instr, byte *pc);
  * x86 instructions can occupy up to 17 bytes, so the caller should ensure
  * the target location has enough room to avoid overflow.
  */
-byte * 
+byte *
 instr_encode_to_copy(void *drcontext, instr_t *instr, byte *copy_pc,
                      byte *final_pc);
 #ifdef DR_FAST_IR
@@ -142,7 +142,8 @@ struct _instr_t {
 
     /* this field is for the use of passes as an annotation.
      * it is also used to hold the offset of an instruction when encoding
-     * pc-relative instructions.
+     * pc-relative instructions. A small range of values is reserved for internal use
+     * by DR and cannot be used by clients; see DR_NOTE_FIRST_RESERVED in globals.h.
      */
     void *note;
 
@@ -198,7 +199,7 @@ instr_reset(void *drcontext, instr_t *instr);
  * Frees all dynamically allocated storage that was allocated by \p instr,
  * except for allocated bits.
  * Also zeroes out \p instr's fields, except for raw bit fields,
- * whether \p instr is instr_ok_to_mangle(), and the x86 mode of \p instr.
+ * whether \p instr is instr_is_meta(), and the x86 mode of \p instr.
  * \p instr must have been initialized.
  */
 void
@@ -221,6 +222,24 @@ INSTR_INLINE
  */
 instr_t*
 instr_get_next(instr_t *instr);
+
+INSTR_INLINE
+/**
+ * Returns the next application (non-meta) instruction in the instruction list
+ * that contains \p instr.
+ *
+ * \note As opposed to instr_get_next(), this routine skips all meta
+ * instructions inserted by either DynamoRIO or its clients.
+ *
+ * \note We do recommend using this routine during the phase of application
+ * code analysis, as any meta instructions present are guaranteed to be ok
+ * to skip.
+ * However, the caution should be exercised if using this routine after any
+ * instrumentation insertion has already happened, as instrumentation might
+ * affect register usage or other factors being analyzed.
+ */
+instr_t *
+instr_get_next_app(instr_t *instr);
 
 INSTR_INLINE
 /** Returns the previous instr_t in the instrlist_t that contains \p instr. */
@@ -275,33 +294,65 @@ instr_is_interrupt(instr_t *instr);
 
 INSTR_INLINE
 /**
+ * Return true iff \p instr is an application (non-meta) instruction
+ * (see instr_set_app() for more information).
+ */
+bool
+instr_is_app(instr_t *instr);
+
+/**
+ * Sets \p instr as an application (non-meta) instruction.
+ * An application instruction might be mangled by DR if necessary,
+ * e.g., to create an exit stub for a branch instruction.
+ * All application instructions that are added to basic blocks or
+ * traces should have their translation fields set (via
+ * #instr_set_translation()).
+ */
+void
+instr_set_app(instr_t *instr);
+
+INSTR_INLINE
+/**
+ * Return true iff \p instr is a meta instruction
+ * (see instr_set_meta() for more information).
+ */
+bool
+instr_is_meta(instr_t *instr);
+
+/**
+ * Sets \p instr as a meta instruction.
+ * A meta instruction will not be mangled by DR in any way, which is necessary
+ * to have DR not create an exit stub for a branch instruction.
+ * Meta instructions should not fault (unless such faults are handled
+ * by the client) and are not considered
+ * application instructions but rather added instrumentation code (see
+ * #dr_register_bb_event() for further information).
+ */
+void
+instr_set_meta(instr_t *instr);
+
+INSTR_INLINE
+/**
  * Return true iff \p instr is not a meta-instruction
- * (see instr_set_ok_to_mangle() for more information).
+ * (see instr_set_app() for more information).
+ *
+ * \deprecated instr_is_app()/instr_is_meta() should be used instead.
  */
 bool
 instr_ok_to_mangle(instr_t *instr);
 
 /**
  * Sets \p instr to "ok to mangle" if \p val is true and "not ok to
- * mangle" if \p val is false.  An instruction that is "not ok to
- * mangle" is treated by DR as a "meta-instruction", distinct from
- * normal application instructions, and is not mangled in any way.
- * This is necessary to have DR not create an exit stub for a direct
- * jump.  All non-meta instructions that are added to basic blocks or
- * traces should have their translation fields set (via
- * #instr_set_translation(), or the convenience routine
- * #instr_set_meta_no_translation()) when recreating state at a fault;
- * meta instructions should not fault (unless such faults are handled
- * by the client) and are not considered
- * application instructions but rather added instrumentation code (see
- * #dr_register_bb_event() for further information on recreating).
+ * mangle" if \p val is false.
+ *
+ * \deprecated instr_set_app()/instr_set_meta() should be used instead.
  */
 void
 instr_set_ok_to_mangle(instr_t *instr, bool val);
 
 /**
  * A convenience routine that calls both
- * #instr_set_ok_to_mangle (instr, false) and
+ * #instr_set_meta (instr) and
  * #instr_set_translation (instr, NULL).
  */
 void
@@ -322,7 +373,7 @@ instr_set_ok_to_emit(instr_t *instr, bool val);
 
 /**
  * Returns the length of \p instr.
- * As a side effect, if instr_ok_to_mangle(instr) and \p instr's raw bits
+ * As a side effect, if instr_is_app(instr) and \p instr's raw bits
  * are invalid, encodes \p instr into bytes allocated with
  * instr_allocate_raw_bits(), after which instr is marked as having
  * valid raw bits.
@@ -354,7 +405,7 @@ instr_t *
 instr_build(void *drcontext, int opcode, int num_dsts, int num_srcs);
 
 /**
- * Convenience routine: calls 
+ * Convenience routine: calls
  * - instr_create(dcontext)
  * - instr_set_opcode(instr, opcode)
  * - instr_allocate_raw_bits(dcontext, instr, num_bytes)
@@ -372,7 +423,7 @@ instr_build_bits(void *drcontext, int opcode, uint num_bytes);
  * eflags, or operands.  It could be an uninitialized
  * instruction or the result of decoding an invalid sequence of bytes.
  */
-bool 
+bool
 instr_valid(instr_t *instr);
 
 /** Get the original application PC of \p instr if it exists. */
@@ -380,11 +431,11 @@ app_pc
 instr_get_app_pc(instr_t *instr);
 
 /** Returns \p instr's opcode (an OP_ constant). */
-int 
+int
 instr_get_opcode(instr_t *instr);
 
 /** Assumes \p opcode is an OP_ constant and sets it to be instr's opcode. */
-void 
+void
 instr_set_opcode(instr_t *instr, int opcode);
 
 INSTR_INLINE
@@ -395,14 +446,14 @@ INSTR_INLINE
  * (i.e., base, index, or segment registers) are not separately listed
  * as source operands.
  */
-int 
+int
 instr_num_srcs(instr_t *instr);
 
 INSTR_INLINE
 /**
  * Returns the number of destination operands of \p instr.
  */
-int 
+int
 instr_num_dsts(instr_t *instr);
 
 /**
@@ -410,19 +461,19 @@ instr_num_dsts(instr_t *instr);
  * operands yet.  Allocates storage for \p num_srcs source operands
  * and \p num_dsts destination operands.
  */
-void 
+void
 instr_set_num_opnds(void *drcontext, instr_t *instr, int num_dsts, int num_srcs);
 
 /**
  * Returns \p instr's source operand at position \p pos (0-based).
  */
-opnd_t 
+opnd_t
 instr_get_src(instr_t *instr, uint pos);
 
 /**
  * Returns \p instr's destination operand at position \p pos (0-based).
  */
-opnd_t 
+opnd_t
 instr_get_dst(instr_t *instr, uint pos);
 
 /**
@@ -430,7 +481,7 @@ instr_get_dst(instr_t *instr, uint pos);
  * Also calls instr_set_raw_bits_valid(\p instr, false) and
  * instr_set_operands_valid(\p instr, true).
  */
-void 
+void
 instr_set_src(instr_t *instr, uint pos, opnd_t opnd);
 
 /**
@@ -438,14 +489,14 @@ instr_set_src(instr_t *instr, uint pos, opnd_t opnd);
  * Also calls instr_set_raw_bits_valid(\p instr, false) and
  * instr_set_operands_valid(\p instr, true).
  */
-void 
+void
 instr_set_dst(instr_t *instr, uint pos, opnd_t opnd);
 
 /**
  * Assumes that \p cti_instr is a control transfer instruction
  * Returns the first source operand of \p cti_instr (its target).
  */
-opnd_t 
+opnd_t
 instr_get_target(instr_t *cti_instr);
 
 /**
@@ -454,15 +505,15 @@ instr_get_target(instr_t *cti_instr);
  * Also calls instr_set_raw_bits_valid(\p instr, false) and
  * instr_set_operands_valid(\p instr, true).
  */
-void 
+void
 instr_set_target(instr_t *cti_instr, opnd_t target);
 
 /** Returns true iff \p instr's operands are up to date. */
-bool 
+bool
 instr_operands_valid(instr_t *instr);
 
 /** Sets \p instr's operands to be valid if \p valid is true, invalid otherwise. */
-void 
+void
 instr_set_operands_valid(instr_t *instr, bool valid);
 
 /**
@@ -471,27 +522,27 @@ instr_set_operands_valid(instr_t *instr, bool valid);
  * to be valid.  However, calling instr_get_opcode() will attempt to
  * decode a valid opcode, hence the purpose of this routine.
  */
-bool 
+bool
 instr_opcode_valid(instr_t *instr);
 
 /** Returns \p instr's eflags use as EFLAGS_ constants or'ed together. */
-uint 
+uint
 instr_get_eflags(instr_t *instr);
 
 /** Returns the eflags usage of instructions with opcode \p opcode,
  * as EFLAGS_ constants or'ed together.
  */
-uint 
+uint
 instr_get_opcode_eflags(int opcode);
 
 /**
- * Returns \p instr's arithmetic flags (bottom 6 eflags) use 
+ * Returns \p instr's arithmetic flags (bottom 6 eflags) use
  * as EFLAGS_ constants or'ed together.
  * If \p instr's eflags behavior has not been calculated yet or is
  * invalid, the entire eflags use is calculated and returned (not
  * just the arithmetic flags).
  */
-uint 
+uint
 instr_get_arith_flags(instr_t *instr);
 
 /**
@@ -499,23 +550,23 @@ instr_get_arith_flags(instr_t *instr);
  * Sets \p instr's raw bits to be \p length bytes starting at \p addr.
  * Does not set the operands invalid.
  */
-void 
+void
 instr_set_raw_bits(instr_t *instr, byte * addr, uint length);
 
 /** Sets \p instr's raw bits to be valid if \p valid is true, invalid otherwise. */
-void 
+void
 instr_set_raw_bits_valid(instr_t *instr, bool valid);
 
 /** Returns true iff \p instr's raw bits are a valid encoding of instr. */
-bool 
+bool
 instr_raw_bits_valid(instr_t *instr);
 
 /** Returns true iff \p instr has its own allocated memory for raw bits. */
-bool 
+bool
 instr_has_allocated_bits(instr_t *instr);
 
 /** Returns true iff \p instr's raw bits are not a valid encoding of \p instr. */
-bool 
+bool
 instr_needs_encoding(instr_t *instr);
 
 /**
@@ -543,22 +594,22 @@ instr_set_meta_may_fault(instr_t *instr, bool val);
  * initialized with the bytes pointed to.
  * \p instr is then set to point to the allocated memory.
  */
-void 
+void
 instr_allocate_raw_bits(void *drcontext, instr_t *instr, uint num_bytes);
 
 /**
  * Sets the translation pointer for \p instr, used to recreate the
  * application address corresponding to this instruction.  When adding
  * or modifying instructions that are to be considered application
- * instructions (i.e., non meta-instructions: see
- * #instr_ok_to_mangle), the translation should always be set.  Pick
+ * instructions (i.e., non meta-instructions: see #instr_is_app),
+ * the translation should always be set.  Pick
  * the application address that if executed will be equivalent to
  * restarting \p instr.  Currently the translation address must lie
  * within the existing bounds of the containing code block.
  * Returns the supplied \p instr (for easy chaining).  Use
  * #instr_get_app_pc to see the current value of the translation.
  */
-instr_t * 
+instr_t *
 instr_set_translation(instr_t *instr, app_pc addr);
 
 /**
@@ -594,7 +645,7 @@ instr_free_raw_bits(void *drcontext, instr_t *instr);
  * Assumes that \p instr's raw bits are valid and have > \p pos bytes.
  * Returns a pointer to \p instr's raw byte at position \p pos (beginning with 0).
  */
-byte 
+byte
 instr_get_raw_byte(instr_t *instr, uint pos);
 
 /**
@@ -602,7 +653,7 @@ instr_get_raw_byte(instr_t *instr, uint pos);
  * and have > \p pos bytes.
  * Sets instr's raw byte at position \p pos (beginning with 0) to the value \p byte.
  */
-void 
+void
 instr_set_raw_byte(instr_t *instr, uint pos, byte byte);
 
 /**
@@ -610,7 +661,7 @@ instr_set_raw_byte(instr_t *instr, uint pos, byte byte);
  * and have >= num_bytes bytes.
  * Copies the \p num_bytes beginning at start to \p instr's raw bits.
  */
-void 
+void
 instr_set_raw_bytes(instr_t *instr, byte *start, uint num_bytes);
 
 /**
@@ -618,14 +669,14 @@ instr_set_raw_bytes(instr_t *instr, byte *start, uint num_bytes);
  * and have > pos+3 bytes.
  * Sets the 4 bytes beginning at position \p pos (0-based) to the value word.
  */
-void 
+void
 instr_set_raw_word(instr_t *instr, uint pos, uint word);
 
 /**
  * Assumes that \p instr's raw bits are valid and have > \p pos + 3 bytes.
  * Returns the 4 bytes beginning at position \p pos (0-based).
  */
-uint 
+uint
 instr_get_raw_word(instr_t *instr, uint pos);
 
 /**
@@ -640,7 +691,7 @@ instr_set_prefix_flag(instr_t *instr, uint prefix);
  * Assumes that \p prefix is a PREFIX_ constant.
  * Returns true if \p instr's prefixes contain the flag \p prefix.
  */
-bool 
+bool
 instr_get_prefix_flag(instr_t *instr, uint prefix);
 #ifdef X64
 
@@ -660,7 +711,7 @@ instr_set_x86_mode(instr_t *instr, bool x86);
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 instr_get_x86_mode(instr_t *instr);
 #endif
 
@@ -670,7 +721,7 @@ instr_get_x86_mode(instr_t *instr);
  * address sizes, to 16 bits.
  * Does not shrink DR_REG_ESI or DR_REG_EDI used in string instructions.
  */
-void 
+void
 instr_shrink_to_16_bits(instr_t *instr);
 #ifdef X64
 
@@ -681,7 +732,7 @@ instr_shrink_to_16_bits(instr_t *instr);
  *
  * \note For 64-bit DR builds only.
  */
-void 
+void
 instr_shrink_to_32_bits(instr_t *instr);
 #endif
 
@@ -700,7 +751,7 @@ instr_uses_reg(instr_t *instr, reg_id_t reg);
  * Returns true iff at least one of \p instr's operands references a floating
  * point register.
  */
-bool 
+bool
 instr_uses_fp_reg(instr_t *instr);
 
 /**
@@ -719,7 +770,7 @@ instr_reg_in_src(instr_t *instr, reg_id_t reg);
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff at least one of \p instr's destination operands references \p reg.
  */
-bool 
+bool
 instr_reg_in_dst(instr_t *instr, reg_id_t reg);
 
 /**
@@ -727,7 +778,7 @@ instr_reg_in_dst(instr_t *instr, reg_id_t reg);
  * Returns true iff at least one of \p instr's destination operands is
  * a register operand for a register that overlaps \p reg.
  */
-bool 
+bool
 instr_writes_to_reg(instr_t *instr, reg_id_t reg);
 
 /**
@@ -738,7 +789,7 @@ instr_writes_to_reg(instr_t *instr, reg_id_t reg);
  *
  * Returns false for multi-byte nops with an operand using reg.
  */
-bool 
+bool
 instr_reads_from_reg(instr_t *instr, reg_id_t reg);
 
 /**
@@ -753,36 +804,48 @@ instr_writes_to_exact_reg(instr_t *instr, reg_id_t reg);
  * Replaces all instances of \p old_opnd in \p instr's source operands with
  * \p new_opnd (uses opnd_same() to detect sameness).
  */
-bool 
+bool
 instr_replace_src_opnd(instr_t *instr, opnd_t old_opnd, opnd_t new_opnd);
 
 /**
  * Returns true iff \p instr1 and \p instr2 have the same opcode, prefixes,
  * and source and destination operands (uses opnd_same() to compare the operands).
  */
-bool 
+bool
 instr_same(instr_t *instr1, instr_t *instr2);
 
 /**
  * Returns true iff any of \p instr's source operands is a memory reference.
  *
- * Returns false for multi-byte nops with a memory operand.
+ * Unlike opnd_is_memory_reference(), this routine conisders the
+ * semantics of the instruction and returns false for both multi-byte
+ * nops with a memory operand and for the #OP_lea instruction, as they
+ * do not really reference the memory.  It does return true for
+ * prefetch instructions.
  */
 bool
 instr_reads_memory(instr_t *instr);
 
 /** Returns true iff any of \p instr's destination operands is a memory reference. */
-bool 
+bool
 instr_writes_memory(instr_t *instr);
+
+/**
+ * Returns true iff \p instr writes to an xmm register and zeroes the top half
+ * of the corresponding ymm register as a result (some instructions preserve
+ * the top half while others zero it when writing to the bottom half).
+ */
+bool
+instr_zeroes_ymmh(instr_t *instr);
 #ifdef X64
 
 
 /**
- * Returns true iff any of \p instr's operands is a rip-relative memory reference. 
+ * Returns true iff any of \p instr's operands is a rip-relative memory reference.
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 instr_has_rel_addr_reference(instr_t *instr);
 
 /**
@@ -824,6 +887,10 @@ instr_get_rel_addr_src_idx(instr_t *instr);
  * \p mc->flags must include DR_MC_CONTROL and DR_MC_INTEGER.
  * For instructions that use vector addressing (VSIB, introduced in AVX2),
  * mc->flags must additionally include DR_MC_MULTIMEDIA.
+ *
+ * Like instr_reads_memory(), this routine does not consider
+ * multi-byte nops that use addressing operands, or the #OP_lea
+ * instruction's source operand, to be memory references.
  */
 app_pc
 instr_compute_address(instr_t *instr, dr_mcontext_t *mc);
@@ -841,6 +908,10 @@ instr_compute_address(instr_t *instr, dr_mcontext_t *mc);
  * \p mc->flags must include DR_MC_CONTROL and DR_MC_INTEGER.
  * For instructions that use vector addressing (VSIB, introduced in AVX2),
  * mc->flags must additionally include DR_MC_MULTIMEDIA.
+ *
+ * Like instr_reads_memory(), this routine does not consider
+ * multi-byte nops that use addressing operands, or the #OP_lea
+ * instruction's source operand, to be memory references.
  */
 bool
 instr_compute_address_ex(instr_t *instr, dr_mcontext_t *mc, uint index,
@@ -850,8 +921,12 @@ instr_compute_address_ex(instr_t *instr, dr_mcontext_t *mc, uint index,
  * Performs address calculation in the same manner as
  * instr_compute_address_ex() with additional information
  * of which opnd is used for address computation returned
- * in \p pos. If \p pos is NULL, it is the same as 
+ * in \p pos. If \p pos is NULL, it is the same as
  * instr_compute_address_ex().
+ *
+ * Like instr_reads_memory(), this routine does not consider
+ * multi-byte nops that use addressing operands, or the #OP_lea
+ * instruction's source operand, to be memory references.
  */
 bool
 instr_compute_address_ex_pos(instr_t *instr, dr_mcontext_t *mc, uint index,
@@ -868,7 +943,7 @@ instr_compute_address_ex_pos(instr_t *instr, dr_mcontext_t *mc, uint index,
 uint
 instr_memory_reference_size(instr_t *instr);
 
-/** 
+/**
  * \return a pointer to user-controlled data fields in a label instruction.
  * These fields are available for use by clients for their own purposes.
  * Returns NULL if \p instr is not a label instruction.
@@ -881,48 +956,48 @@ instr_get_label_data_area(instr_t *instr);
  * Returns true iff \p instr is an IA-32/AMD64 "mov" instruction: either OP_mov_st,
  * OP_mov_ld, OP_mov_imm, OP_mov_seg, or OP_mov_priv.
  */
-bool 
+bool
 instr_is_mov(instr_t *instr);
 
 /**
  * Returns true iff \p instr's opcode is OP_call, OP_call_far, OP_call_ind,
  * or OP_call_far_ind.
  */
-bool 
+bool
 instr_is_call(instr_t *instr);
 
 /** Returns true iff \p instr's opcode is OP_call or OP_call_far. */
-bool 
+bool
 instr_is_call_direct(instr_t *instr);
 
 /** Returns true iff \p instr's opcode is OP_call. */
-bool 
+bool
 instr_is_near_call_direct(instr_t *instr);
 
 /** Returns true iff \p instr's opcode is OP_call_ind or OP_call_far_ind. */
-bool 
+bool
 instr_is_call_indirect(instr_t *instr);
 
 /** Returns true iff \p instr's opcode is OP_ret, OP_ret_far, or OP_iret. */
-bool 
+bool
 instr_is_return(instr_t *instr);
 
 /**
  * Returns true iff \p instr is a control transfer instruction of any kind
  * This includes OP_jcc, OP_jcc_short, OP_loop*, OP_jecxz, OP_call*, and OP_jmp*.
  */
-bool 
+bool
 instr_is_cti(instr_t *instr);
 
 /**
  * Returns true iff \p instr is a control transfer instruction that takes an
  * 8-bit offset: OP_loop*, OP_jecxz, OP_jmp_short, or OP_jcc_short
  */
-bool 
+bool
 instr_is_cti_short(instr_t *instr);
 
 /** Returns true iff \p instr is one of OP_loop* or OP_jecxz. */
-bool 
+bool
 instr_is_cti_loop(instr_t *instr);
 
 /**
@@ -934,14 +1009,14 @@ instr_is_cti_loop(instr_t *instr);
  * after \p instr.
  * Otherwise, the encoding is expected to be found in \p instr's allocated bits.
  */
-bool 
+bool
 instr_is_cti_short_rewrite(instr_t *instr, byte *pc);
 
 /**
  * Returns true iff \p instr is a conditional branch: OP_jcc, OP_jcc_short,
  * OP_loop*, or OP_jecxz.
  */
-bool 
+bool
 instr_is_cbr(instr_t *instr);
 
 /**
@@ -949,32 +1024,32 @@ instr_is_cbr(instr_t *instr);
  * OP_call_ind, OP_ret, OP_jmp_far_ind, OP_call_far_ind, OP_ret_far, or
  * OP_iret.
  */
-bool 
+bool
 instr_is_mbr(instr_t *instr);
 
 /**
  * Returns true iff \p instr is an unconditional direct branch: OP_jmp,
  * OP_jmp_short, or OP_jmp_far.
  */
-bool 
+bool
 instr_is_ubr(instr_t *instr);
 
 /**
  * Returns true iff \p instr is a near unconditional direct branch: OP_jmp,
  * or OP_jmp_short.
  */
-bool 
+bool
 instr_is_near_ubr(instr_t *instr);
 
 /**
  * Returns true iff \p instr is a far control transfer instruction: OP_jmp_far,
  * OP_call_far, OP_jmp_far_ind, OP_call_far_ind, OP_ret_far, or OP_iret.
  */
-bool 
+bool
 instr_is_far_cti(instr_t *instr);
 
 /** Returns true if \p instr is an absolute call or jmp that is far. */
-bool 
+bool
 instr_is_far_abs_cti(instr_t *instr);
 
 /**
@@ -982,9 +1057,9 @@ instr_is_far_abs_cti(instr_t *instr);
  * source operand of 0x80 on linux or 0x2e on windows, or OP_sysenter,
  * or OP_syscall, or #instr_is_wow64_syscall() for WOW64.
  */
-bool 
+bool
 instr_is_syscall(instr_t *instr);
-#ifdef WINDOWS 
+#ifdef WINDOWS
 
 
 /**
@@ -1006,7 +1081,7 @@ instr_is_wow64_syscall(instr_t *instr);
  * OP_prefetchnt0, OP_prefetchnt1, OP_prefetchnt2, OP_prefetch, or
  * OP_prefetchw.
  */
-bool 
+bool
 instr_is_prefetch(instr_t *instr);
 
 /**
@@ -1015,11 +1090,11 @@ instr_is_prefetch(instr_t *instr);
  * Returns true and sets \p *value to the constant being moved for the following
  * cases: mov_imm, mov_st, and xor where the source equals the destination.
  */
-bool 
+bool
 instr_is_mov_constant(instr_t *instr, ptr_int_t *value);
 
 /** Returns true iff \p instr is a floating point instruction. */
-bool 
+bool
 instr_is_floating(instr_t *instr);
 /**
  * Indicates which type of floating-point operation and instruction performs.
@@ -1038,27 +1113,27 @@ typedef enum {
  * @param[out] type  If the return value is true and \p type is
  *   non-NULL, the type of the floating point operation is written to \p type.
  */
-bool 
+bool
 instr_is_floating_ex(instr_t *instr, dr_fp_type_t *type);
 
 /** Returns true iff \p instr is part of Intel's MMX instructions. */
-bool 
+bool
 instr_is_mmx(instr_t *instr);
 
 /** Returns true iff \p instr is part of Intel's SSE or SSE2 instructions. */
-bool 
+bool
 instr_is_sse_or_sse2(instr_t *instr);
 
 /** Returns true iff \p instr is a "mov $imm -> (%esp)". */
-bool 
+bool
 instr_is_mov_imm_to_tos(instr_t *instr);
 
 /** Returns true iff \p instr is a label meta-instruction. */
-bool 
+bool
 instr_is_label(instr_t *instr);
 
 /** Returns true iff \p instr is an "undefined" instruction (ud2) */
-bool 
+bool
 instr_is_undefined(instr_t *instr);
 
 /**
@@ -1067,7 +1142,7 @@ instr_is_undefined(instr_t *instr);
  * Returns the first source operand if \p instr's operands are valid,
  * else if \p instr's raw bits are valid returns the first raw byte.
  */
-int 
+int
 instr_get_interrupt_number(instr_t *instr);
 
 /**
@@ -1076,26 +1151,26 @@ instr_get_interrupt_number(instr_t *instr);
  * e.g., changes OP_jb to OP_jnb.
  * Works on cti_short_rewrite as well.
  */
-void 
+void
 instr_invert_cbr(instr_t *instr);
 
 /**
- * Assumes that instr is a meta instruction (!instr_ok_to_mangle())
- * and an instr_is_cti_short() (8-bit reach).  Converts instr's opcode
+ * Assumes that instr is a meta instruction (instr_is_meta())
+ * and an instr_is_cti_short() (8-bit reach). Converts instr's opcode
  * to a long form (32-bit reach).  If instr's opcode is OP_loop* or
  * OP_jecxz, converts it to a sequence of multiple instructions (which
  * is different from instr_is_cti_short_rewrite()).  Each added instruction
- * is marked !instr_ok_to_mangle().
+ * is marked instr_is_meta().
  * Returns the long form of the instruction, which is identical to \p instr
  * unless \p instr is OP_loop* or OP_jecxz, in which case the return value
  * is the final instruction in the sequence, the one that has long reach.
- * \note DR automatically converts non-meta short ctis to long form.
+ * \note DR automatically converts app short ctis to long form.
  */
 instr_t *
 instr_convert_short_meta_jmp_to_long(void *drcontext, instrlist_t *ilist,
                                      instr_t *instr);
 
-/** 
+/**
  * Given \p eflags, returns whether or not the conditional branch, \p
  * instr, would be taken.
  */
@@ -1126,7 +1201,7 @@ instr_cmovcc_triggered(instr_t *instr, reg_t eflags);
  * - mov reg, reg
  * - lea reg, (reg)
  */
-bool 
+bool
 instr_is_nop(instr_t *instr);
 
 /**
@@ -1157,7 +1232,7 @@ instr_create_0dst_2src(void *drcontext, int opcode,
  * on the thread-local heap with opcode \p opcode and three sources
  * (\p src1, \p src2, \p src3).
  */
-instr_t * 
+instr_t *
 instr_create_0dst_3src(void *drcontext, int opcode,
                        opnd_t src1, opnd_t src2, opnd_t src3);
 
@@ -1201,7 +1276,7 @@ instr_create_1dst_3src(void *drcontext, int opcode,
  * thread-local heap with opcode \p opcode, one destination (\p dst),
  * and five sources (\p src1, \p src2, \p src3, \p src4, \p src5).
  */
-instr_t * 
+instr_t *
 instr_create_1dst_5src(void *drcontext, int opcode,
                        opnd_t dst, opnd_t src1, opnd_t src2, opnd_t src3,
                        opnd_t src4, opnd_t src5);
@@ -1265,7 +1340,7 @@ instr_create_3dst_0src(void *drcontext, int opcode,
 /**
  * Convenience routine that returns an initialized instr_t allocated
  * on the thread-local heap with opcode \p opcode, three destinations
- * (\p dst1, \p dst2, \p dst3) and three sources 
+ * (\p dst1, \p dst2, \p dst3) and three sources
  * (\p src1, \p src2, \p src3).
  */
 instr_t *
@@ -1276,7 +1351,7 @@ instr_create_3dst_3src(void *drcontext, int opcode,
 /**
  * Convenience routine that returns an initialized instr_t allocated
  * on the thread-local heap with opcode \p opcode, three destinations
- * (\p dst1, \p dst2, \p dst3) and four sources 
+ * (\p dst1, \p dst2, \p dst3) and four sources
  * (\p src1, \p src2, \p src3, \p src4).
  */
 instr_t *
@@ -1332,35 +1407,35 @@ instr_create_pusha(void *drcontext);
 /* we only care about these 11 flags, and mostly only about the first 6
  * we consider an undefined effect on a flag to be a write
  */
-#define EFLAGS_READ_CF   0x00000001 /**< Reads CF (Carry Flag). */             
-#define EFLAGS_READ_PF   0x00000002 /**< Reads PF (Parity Flag). */            
-#define EFLAGS_READ_AF   0x00000004 /**< Reads AF (Auxiliary Carry Flag). */   
-#define EFLAGS_READ_ZF   0x00000008 /**< Reads ZF (Zero Flag). */              
-#define EFLAGS_READ_SF   0x00000010 /**< Reads SF (Sign Flag). */              
-#define EFLAGS_READ_TF   0x00000020 /**< Reads TF (Trap Flag). */              
-#define EFLAGS_READ_IF   0x00000040 /**< Reads IF (Interrupt Enable Flag). */  
-#define EFLAGS_READ_DF   0x00000080 /**< Reads DF (Direction Flag). */         
-#define EFLAGS_READ_OF   0x00000100 /**< Reads OF (Overflow Flag). */          
-#define EFLAGS_READ_NT   0x00000200 /**< Reads NT (Nested Task). */            
-#define EFLAGS_READ_RF   0x00000400 /**< Reads RF (Resume Flag). */            
-#define EFLAGS_WRITE_CF  0x00000800 /**< Writes CF (Carry Flag). */             
-#define EFLAGS_WRITE_PF  0x00001000 /**< Writes PF (Parity Flag). */            
-#define EFLAGS_WRITE_AF  0x00002000 /**< Writes AF (Auxiliary Carry Flag). */   
-#define EFLAGS_WRITE_ZF  0x00004000 /**< Writes ZF (Zero Flag). */              
-#define EFLAGS_WRITE_SF  0x00008000 /**< Writes SF (Sign Flag). */              
-#define EFLAGS_WRITE_TF  0x00010000 /**< Writes TF (Trap Flag). */              
-#define EFLAGS_WRITE_IF  0x00020000 /**< Writes IF (Interrupt Enable Flag). */  
-#define EFLAGS_WRITE_DF  0x00040000 /**< Writes DF (Direction Flag). */         
-#define EFLAGS_WRITE_OF  0x00080000 /**< Writes OF (Overflow Flag). */          
-#define EFLAGS_WRITE_NT  0x00100000 /**< Writes NT (Nested Task). */            
-#define EFLAGS_WRITE_RF  0x00200000 /**< Writes RF (Resume Flag). */            
+#define EFLAGS_READ_CF   0x00000001 /**< Reads CF (Carry Flag). */
+#define EFLAGS_READ_PF   0x00000002 /**< Reads PF (Parity Flag). */
+#define EFLAGS_READ_AF   0x00000004 /**< Reads AF (Auxiliary Carry Flag). */
+#define EFLAGS_READ_ZF   0x00000008 /**< Reads ZF (Zero Flag). */
+#define EFLAGS_READ_SF   0x00000010 /**< Reads SF (Sign Flag). */
+#define EFLAGS_READ_TF   0x00000020 /**< Reads TF (Trap Flag). */
+#define EFLAGS_READ_IF   0x00000040 /**< Reads IF (Interrupt Enable Flag). */
+#define EFLAGS_READ_DF   0x00000080 /**< Reads DF (Direction Flag). */
+#define EFLAGS_READ_OF   0x00000100 /**< Reads OF (Overflow Flag). */
+#define EFLAGS_READ_NT   0x00000200 /**< Reads NT (Nested Task). */
+#define EFLAGS_READ_RF   0x00000400 /**< Reads RF (Resume Flag). */
+#define EFLAGS_WRITE_CF  0x00000800 /**< Writes CF (Carry Flag). */
+#define EFLAGS_WRITE_PF  0x00001000 /**< Writes PF (Parity Flag). */
+#define EFLAGS_WRITE_AF  0x00002000 /**< Writes AF (Auxiliary Carry Flag). */
+#define EFLAGS_WRITE_ZF  0x00004000 /**< Writes ZF (Zero Flag). */
+#define EFLAGS_WRITE_SF  0x00008000 /**< Writes SF (Sign Flag). */
+#define EFLAGS_WRITE_TF  0x00010000 /**< Writes TF (Trap Flag). */
+#define EFLAGS_WRITE_IF  0x00020000 /**< Writes IF (Interrupt Enable Flag). */
+#define EFLAGS_WRITE_DF  0x00040000 /**< Writes DF (Direction Flag). */
+#define EFLAGS_WRITE_OF  0x00080000 /**< Writes OF (Overflow Flag). */
+#define EFLAGS_WRITE_NT  0x00100000 /**< Writes NT (Nested Task). */
+#define EFLAGS_WRITE_RF  0x00200000 /**< Writes RF (Resume Flag). */
 
-#define EFLAGS_READ_ALL  0x000007ff /**< Reads all flags. */    
-#define EFLAGS_WRITE_ALL 0x003ff800 /**< Writes all flags. */   
+#define EFLAGS_READ_ALL  0x000007ff /**< Reads all flags. */
+#define EFLAGS_WRITE_ALL 0x003ff800 /**< Writes all flags. */
 /* 6 most common flags ("arithmetic flags"): CF, PF, AF, ZF, SF, OF */
-/** Reads all 6 arithmetic flags (CF, PF, AF, ZF, SF, OF). */ 
+/** Reads all 6 arithmetic flags (CF, PF, AF, ZF, SF, OF). */
 #define EFLAGS_READ_6    0x0000011f
-/** Writes all 6 arithmetic flags (CF, PF, AF, ZF, SF, OF). */ 
+/** Writes all 6 arithmetic flags (CF, PF, AF, ZF, SF, OF). */
 #define EFLAGS_WRITE_6   0x0008f800
 
 /** Converts an EFLAGS_WRITE_* value to the corresponding EFLAGS_READ_* value. */
@@ -1389,7 +1464,7 @@ enum {
 
 
 /* CLIENT_ASSERT with a trailing comma in a debug build, otherwise nothing. */
-#define CLIENT_ASSERT_(cond, msg) IF_DEBUG_(CLIENT_ASSERT(cond, msg))
+#define CLIENT_ASSERT_(cond, msg) DR_IF_DEBUG_(CLIENT_ASSERT(cond, msg))
 
 /* Internally DR has multiple levels of IR, but once it gets to a client, we
  * assume it's already level 3 or higher, and we don't need to do any checks.
@@ -1401,8 +1476,8 @@ enum {
  * internal routines we'd use for these checks anyway.
  */
 #define CLIENT_ASSERT(cond, msg)
-#define IF_DEBUG(stmt)
-#define IF_DEBUG_(stmt)
+#define DR_IF_DEBUG(stmt)
+#define DR_IF_DEBUG_(stmt)
 
 /* Any function that takes or returns an opnd_t by value should be a macro,
  * *not* an inline function.  Most widely available versions of gcc have trouble
@@ -1510,11 +1585,26 @@ INSTR_INLINE
 opnd_t
 opnd_create_reg(reg_id_t r)
 {
-    opnd_t opnd IF_DEBUG(= {0});  
+    opnd_t opnd DR_IF_DEBUG(= {0});  
     CLIENT_ASSERT(r <= DR_REG_LAST_ENUM && r != DR_REG_INVALID,
                   "opnd_create_reg: invalid register");
     opnd.kind = REG_kind;
     opnd.value.reg = r;
+    opnd.size = 0; /* indicates full size of reg */
+    return opnd;
+}
+
+INSTR_INLINE
+opnd_t
+opnd_create_reg_partial(reg_id_t r, opnd_size_t subsize)
+{
+    opnd_t opnd DR_IF_DEBUG(= {0});  
+    CLIENT_ASSERT((r >= DR_REG_MM0 && r <= DR_REG_XMM15) ||
+                  (r >= DR_REG_YMM0 && r <= DR_REG_YMM15),
+                  "opnd_create_reg_partial: non-multimedia register");
+    opnd.kind = REG_kind;
+    opnd.value.reg = r;
+    opnd.size = subsize;
     return opnd;
 }
 
@@ -1562,10 +1652,25 @@ opnd_create_pc(app_pc pc)
 
 INSTR_INLINE
 bool
+instr_is_app(instr_t *instr)
+{
+    CLIENT_ASSERT(instr != NULL, "instr_is_app: passed NULL");
+    return ((instr->flags & INSTR_DO_NOT_MANGLE) == 0);
+}
+
+INSTR_INLINE
+bool
 instr_ok_to_mangle(instr_t *instr)
 {
-    CLIENT_ASSERT(instr != NULL, "instr_ok_to_mangle: passed NULL");
-    return ((instr->flags & INSTR_DO_NOT_MANGLE) == 0);
+    return instr_is_app(instr);
+}
+
+INSTR_INLINE
+bool
+instr_is_meta(instr_t *instr)
+{
+    CLIENT_ASSERT(instr != NULL, "instr_is_meta: passed NULL");
+    return ((instr->flags & INSTR_DO_NOT_MANGLE) != 0);
 }
 
 
@@ -1635,6 +1740,18 @@ instr_get_next(instr_t *instr)
 }
 
 INSTR_INLINE
+instr_t *
+instr_get_next_app(instr_t *instr)
+{
+    CLIENT_ASSERT(instr != NULL, "instr_get_next_app: passed NULL");
+    for (instr = instr->next; instr != NULL; instr = instr->next) {
+        if (instr_is_app(instr))
+            return instr;
+    }
+    return NULL;
+}
+
+INSTR_INLINE
 instr_t*
 instr_get_prev(instr_t *instr)
 {
@@ -1668,7 +1785,7 @@ instr_set_prev(instr_t *instr, instr_t *prev)
  * whole-instruction level, but rather on individual operands (of
  * course with multiple operands they must all match).
  * The rep and repne prefixes are encoded directly into the opcodes.
- * 
+ *
  */
 #define PREFIX_LOCK          0x01 /**< Makes the instruction's memory accesses atomic. */
 #define PREFIX_JCC_NOT_TAKEN 0x02 /**< Branch hint: conditional branch is taken. */
@@ -1679,7 +1796,7 @@ instr_set_prev(instr_t *instr, instr_t *prev)
 
 
 /**
- * Prints the instruction \p instr to file \p outfile. 
+ * Prints the instruction \p instr to file \p outfile.
  * Does not print address-size or data-size prefixes for other than
  * just-decoded instrs, and does not check that the instruction has a
  * valid encoding.  Prints each operand with leading zeros indicating
@@ -1687,7 +1804,7 @@ instr_set_prev(instr_t *instr, instr_t *prev)
  * The default is to use AT&T-style syntax, unless the \ref op_syntax_intel
  * "-syntax_intel" runtime option is specified.
  */
-void 
+void
 instr_disassemble(void *drcontext, instr_t *instr, file_t outfile);
 
 /**

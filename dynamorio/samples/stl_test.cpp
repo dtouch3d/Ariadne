@@ -1,23 +1,23 @@
 /* **********************************************************
- * Copyright (c) 2013 Google, Inc.  All rights reserved.
+ * Copyright (c) 2013-2014 Google, Inc.  All rights reserved.
  * Copyright (c) 2008-2010 VMware, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,7 +34,7 @@
 /* C++ sample client:
  * stl_test.cpp
  *
- * Some simple tests with C++ STL containers to make sure they 
+ * Some simple tests with C++ STL containers to make sure they
  * work with a DR client.
  */
 
@@ -73,6 +73,9 @@ dr_init(client_id_t client_id)
     int i;
     bool success = true;
 
+    dr_set_client_name("DynamoRIO Sample Client 'stl_test'",
+                       "http://dynamorio.org/issues");
+
 #ifdef SHOW_RESULTS
     cout << "Start..." << endl;
 #endif
@@ -94,7 +97,7 @@ dr_init(client_id_t client_id)
     for (i=0; i<5; i++) {
         v->push_back(i);
     }
-    
+
     for (i=0; i<5; i++) {
 #ifdef SHOW_RESULTS
         cout << (*v)[i];
@@ -102,7 +105,7 @@ dr_init(client_id_t client_id)
         if ((*v)[i] != i) {
             success = false;
         }
-    }    
+    }
     delete v;
 
     //

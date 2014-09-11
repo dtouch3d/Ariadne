@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,8 +44,8 @@
  */
 
 /* A client's target operating system and architecture must be specified. */
-#if (!defined(LINUX) && !defined(WINDOWS)) || (defined(LINUX) && defined(WINDOWS))
-# error Target operating system unspecified: must define either WINDOWS xor LINUX
+#if !defined(LINUX) && !defined(WINDOWS) && !defined(MACOS)
+# error Target operating system unspecified: must define WINDOWS, LINUX, or MACOS
 #endif
 
 #if (!defined(X86_64) && !defined(X86_32)) || (defined(X86_64) && defined(X86_32))
@@ -56,7 +56,7 @@
 # define X64
 #endif
 
-#if defined(LINUX) && !defined(UNIX)
+#if (defined(LINUX) || defined(MACOS)) && !defined(UNIX)
 # define UNIX
 #endif
 
@@ -107,7 +107,7 @@
 
 
 /** Cross-platform maximum file path length. */
-#define MAXIMUM_PATH      260 
+#define MAXIMUM_PATH      260
 
 
 #ifndef NULL
@@ -214,6 +214,9 @@ typedef size_t app_rva_t;
 #ifdef WINDOWS
 typedef ptr_uint_t thread_id_t;
 typedef ptr_uint_t process_id_t;
+#elif defined(MACOS)
+typedef uint64 thread_id_t;
+typedef pid_t process_id_t;
 #else /* Linux */
 typedef pid_t thread_id_t;
 typedef pid_t process_id_t;
@@ -229,8 +232,8 @@ typedef pid_t process_id_t;
 typedef HANDLE file_t;
 /** The sentinel value for an invalid file_t. */
 #  define INVALID_FILE INVALID_HANDLE_VALUE
-/* dr_get_stdout_file and dr_get_stderr_file return errors as 
- * INVALID_HANDLE_VALUE.  We leave INVALID_HANDLE_VALUE as is, 
+/* dr_get_stdout_file and dr_get_stderr_file return errors as
+ * INVALID_HANDLE_VALUE.  We leave INVALID_HANDLE_VALUE as is,
  * since it equals INVALID_FILE
  */
 /** The file_t value for standard output. */
@@ -338,8 +341,23 @@ typedef struct _instr_t instr_t;
 # define SZFMT "%d"
 #endif
 
-#define PFX "0x" PFMT
-#define PIFX "0x" PIFMT
+#define PFX "0x" PFMT      /**< printf format code for pointers */
+#define PIFX "0x" PIFMT    /**< printf format code for pointer-sized integers */
+
+# define INFINITE            0xFFFFFFFF
+
+/* printf codes for {thread,process}_id_t */
+#ifdef WINDOWS
+# define PIDFMT SZFMT /**< printf format code for process_id_t */
+# define TIDFMT SZFMT /**< printf format code for thread_id_t */
+#else
+# define PIDFMT "%d" /**< printf format code for process_id_t */
+# ifdef MACOS
+#  define TIDFMT UINT64_FORMAT_STRING /**< printf format code for thread_id_t */
+# else
+#  define TIDFMT "%d" /**< printf format code for thread_id_t */
+# endif
+#endif
 
 /** 128-bit XMM register. */
 typedef union _dr_xmm_t {
@@ -466,9 +484,9 @@ typedef struct _dr_mcontext_t {
     }; /**< anonymous union of alternative names for rflags/eflags register */
     /**
      * Anonymous union of alternative names for the program counter /
-     * instruction pointer (eip/rip).  This field is not always set or 
+     * instruction pointer (eip/rip).  This field is not always set or
      * read by all API routines.
-     */ 
+     */
     union {
         byte *xip; /**< platform-independent name for full rip/eip register */
         byte *pc; /**< platform-independent alt name for full rip/eip register */
@@ -496,8 +514,21 @@ typedef struct _instr_list_t instrlist_t;
 typedef struct _module_data_t module_data_t;
 
 
+#ifdef X64
 /**
- * Structure written by dr_get_time() to specify the current time. 
+ * Upper note values are reserved for core DR.
+ */
+# define DR_NOTE_FIRST_RESERVED 0xfffffffffffffff0ULL
+#else
+/**
+ * Upper note values are reserved for core DR.
+ */
+# define DR_NOTE_FIRST_RESERVED 0xfffffff0UL
+#endif
+#define DR_NOTE_ANNOTATION (DR_NOTE_FIRST_RESERVED + 1)
+
+/**
+ * Structure written by dr_get_time() to specify the current time.
  */
 typedef struct {
     uint year;         /**< */

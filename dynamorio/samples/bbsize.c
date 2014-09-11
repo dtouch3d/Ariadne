@@ -1,22 +1,23 @@
 /* **********************************************************
+ * Copyright (c) 2014 Google, Inc.  All rights reserved.
  * Copyright (c) 2003-2008 VMware, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -55,9 +56,11 @@ static void event_exit(void);
 static dr_emit_flags_t event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
                                          bool for_trace, bool translating);
 
-DR_EXPORT void 
+DR_EXPORT void
 dr_init(client_id_t id)
 {
+    dr_set_client_name("DynamoRIO Sample Client 'bbsize'",
+                       "http://dynamorio.org/issues");
     num_bb = 0;
     ave_size = 0.;
     max_size = 0;
@@ -75,7 +78,7 @@ dr_init(client_id_t id)
 #endif
 }
 
-static void 
+static void
 event_exit(void)
 {
 #ifdef SHOW_RESULTS
@@ -112,7 +115,9 @@ event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
 
     proc_save_fpstate(fp_align);
 
-    for (instr = instrlist_first(bb); instr != NULL; instr = instr_get_next(instr))
+    for (instr  = instrlist_first_app(bb);
+         instr != NULL;
+         instr  = instr_get_next_app(instr))
         cur_size++;
 
     dr_mutex_lock(stats_mutex);

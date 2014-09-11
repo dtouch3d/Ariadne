@@ -2,9 +2,20 @@ var group__drwrap =
 [
     [ "DRMGR_PRIORITY_NAME_DRWRAP", "group__drwrap.html#ga925e96b9b70bcf935279bfd79dbe6c7f", null ],
     [ "DRWRAP_REPLACE_NATIVE_DATA_SLOT", "group__drwrap.html#ga0f9e93e3ba51cc96470fd261eaa55273", null ],
-    [ "DRWRAP_REPLACE_NATIVE_SP_SLOT", "group__drwrap.html#gad88566adce8386b5d2e6c6de83e21e8b", null ],
-    [ "drwrap_global_flags_t", "group__drwrap.html#gab82c71baab4fe0c5f9962383818b9c92", null ],
-    [ "drwrap_wrap_flags_t", "group__drwrap.html#ga16cc419209fcb0024d010599bb82aa76", null ],
+    [ "DRWRAP_REPLACE_NATIVE_SP_SLOT", "group__drwrap.html#gad88566adce8386b5d2e6c6de83e21e8b", [
+      [ "DRMGR_PRIORITY_APP2APP_DRWRAP", "group__drwrap.html#gga4caf8d8f829279fba122163d961608a4a556c6bce97b9c415e089261848536c14", null ],
+      [ "DRMGR_PRIORITY_INSERT_DRWRAP", "group__drwrap.html#gga4caf8d8f829279fba122163d961608a4ada17e11e67b93129fede7890e032bbbd", null ],
+      [ "DRMGR_PRIORITY_FAULT_DRWRAP", "group__drwrap.html#gga4caf8d8f829279fba122163d961608a4af45be46f89c86ce07739c8243fde7f5d", null ]
+    ] ],
+    [ "drwrap_global_flags_t", "group__drwrap.html#gab82c71baab4fe0c5f9962383818b9c92", [
+      [ "DRWRAP_SAFE_READ_RETADDR", "group__drwrap.html#ggab82c71baab4fe0c5f9962383818b9c92af1b2f3860316577a15e3430942febc8a", null ],
+      [ "DRWRAP_SAFE_READ_ARGS", "group__drwrap.html#ggab82c71baab4fe0c5f9962383818b9c92ab7a628a50b1344c943a703a72e5cfce9", null ],
+      [ "DRWRAP_NO_FRILLS", "group__drwrap.html#ggab82c71baab4fe0c5f9962383818b9c92aeb299993e17993cb86912f93391f6b86", null ],
+      [ "DRWRAP_FAST_CLEANCALLS", "group__drwrap.html#ggab82c71baab4fe0c5f9962383818b9c92add150e3e7ba4ee203a045b936f872b4b", null ]
+    ] ],
+    [ "drwrap_wrap_flags_t", "group__drwrap.html#ga16cc419209fcb0024d010599bb82aa76", [
+      [ "DRWRAP_UNWIND_ON_EXCEPTION", "group__drwrap.html#gga16cc419209fcb0024d010599bb82aa76aaee35c5aabcb42793293b905c448e1c6", null ]
+    ] ],
     [ "drwrap_exit", "group__drwrap.html#ga0e58babc53301c4ade4027dc1e09a088", null ],
     [ "drwrap_get_arg", "group__drwrap.html#ga3d0864daf1ec37a91640a739f8928b83", null ],
     [ "drwrap_get_drcontext", "group__drwrap.html#ga92584c3e1980ac0c467de7d14d2bc2a2", null ],

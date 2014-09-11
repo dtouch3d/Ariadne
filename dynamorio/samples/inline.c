@@ -1,22 +1,23 @@
 /* **********************************************************
+ * Copyright (c) 2014 Google, Inc.  All rights reserved.
  * Copyright (c) 2003-2008 VMware, Inc.  All rights reserved.
  * **********************************************************/
 
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -189,9 +190,12 @@ remove_trace_head_entry(void *drcontext, void *tag)
 
 /****************************************************************************/
 
-DR_EXPORT void 
+DR_EXPORT void
 dr_init(client_id_t id)
 {
+    dr_set_client_name("DynamoRIO Sample Client 'inline'",
+                       "http://dynamorio.org/issues");
+
     htable_mutex = dr_mutex_create();
 
     /* global HASH_BITS-bit addressed hash table */
@@ -217,7 +221,7 @@ dr_init(client_id_t id)
 #endif
 }
 
-static void 
+static void
 event_exit(void)
 {
 #ifdef SHOW_RESULTS
@@ -237,7 +241,7 @@ event_exit(void)
 /****************************************************************************/
 /* the work itself */
 
-static dr_emit_flags_t 
+static dr_emit_flags_t
 event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
                   bool for_trace, bool translating)
 {
@@ -245,7 +249,9 @@ event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
     trace_head_entry_t *e = NULL;
     if (translating)
         return DR_EMIT_DEFAULT;
-    for (instr = instrlist_first(bb); instr != NULL; instr = instr_get_next(instr)) {
+    for (instr  = instrlist_first_app(bb);
+         instr != NULL;
+         instr  = instr_get_next_app(instr)) {
         /* blocks containing calls are trace heads */
         if (instr_is_call(instr)) {
             dr_mark_trace_head(drcontext, tag);
@@ -349,7 +355,7 @@ query_end_trace(void *drcontext, void *trace_tag, void *next_tag)
                    "inline: going to be ending trace "PFX" after "PFX"\n",
                    trace_tag, next_tag);
 #endif
-            dr_mutex_unlock(htable_mutex);      
+            dr_mutex_unlock(htable_mutex);
             return CUSTOM_TRACE_CONTINUE;
         }
     }

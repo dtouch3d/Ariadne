@@ -1,5 +1,5 @@
 /* **********************************************************
- * Copyright (c) 2010-2013 Google, Inc.   All rights reserved.
+ * Copyright (c) 2010-2014 Google, Inc.   All rights reserved.
  * **********************************************************/
 
 /* drutil: DynamoRIO Instrumentation Utilities
@@ -7,7 +7,7 @@
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; 
+ * License as published by the Free Software Foundation;
  * version 2.1 of the License, and no later version.
 
  * This library is distributed in the hope that it will be useful,
@@ -114,6 +114,10 @@ DR_EXPORT
  * middle of the original string loop instruction.  This is to prevent
  * passes that match exact addresses from having multiple hits and
  * doing something like inserting 6 clean calls.
+ *
+ * WARNING: The added instructions include a jecxz instruction which
+ * will not be transformed into a 32-bit-reach instruction: thus,
+ * excessive added instrumentation may result in a reachability problem.
  *
  * The client must use the \p drmgr Extension to order its
  * instrumentation in order to use this function.  This function must

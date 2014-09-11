@@ -6,18 +6,18 @@
 /*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of VMware, Inc. nor the names of its contributors may be
  *   used to endorse or promote products derived from this software without
  *   specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -297,37 +297,37 @@ typedef byte opnd_size_t; /* contains a DR_REG_ or OPSZ_ enum value */
 # define DR_REG_STOP_GPR DR_REG_XDI /**< End of general register enum values */
 #endif
 /**< Number of general registers */
-#define DR_NUM_GPR_REGS (DR_REG_STOP_GPR - DR_REG_START_GPR)
+#define DR_NUM_GPR_REGS (DR_REG_STOP_GPR - DR_REG_START_GPR + 1)
 #define DR_REG_START_64    DR_REG_RAX  /**< Start of 64-bit general register enum values */
-#define DR_REG_STOP_64     DR_REG_R15  /**< End of 64-bit general register enum values */  
+#define DR_REG_STOP_64     DR_REG_R15  /**< End of 64-bit general register enum values */
 #define DR_REG_START_32    DR_REG_EAX  /**< Start of 32-bit general register enum values */
-#define DR_REG_STOP_32     DR_REG_R15D /**< End of 32-bit general register enum values */  
+#define DR_REG_STOP_32     DR_REG_R15D /**< End of 32-bit general register enum values */
 #define DR_REG_START_16    DR_REG_AX   /**< Start of 16-bit general register enum values */
-#define DR_REG_STOP_16     DR_REG_R15W /**< End of 16-bit general register enum values */  
+#define DR_REG_STOP_16     DR_REG_R15W /**< End of 16-bit general register enum values */
 #define DR_REG_START_8     DR_REG_AL   /**< Start of 8-bit general register enum values */
-#define DR_REG_STOP_8      DR_REG_DIL  /**< End of 8-bit general register enum values */  
+#define DR_REG_STOP_8      DR_REG_DIL  /**< End of 8-bit general register enum values */
 #define DR_REG_START_8HL   DR_REG_AL   /**< Start of 8-bit high-low register enum values */
-#define DR_REG_STOP_8HL    DR_REG_BH   /**< End of 8-bit high-low register enum values */  
+#define DR_REG_STOP_8HL    DR_REG_BH   /**< End of 8-bit high-low register enum values */
 #define DR_REG_START_x86_8 DR_REG_AH   /**< Start of 8-bit x86-only register enum values */
 #define DR_REG_STOP_x86_8  DR_REG_BH   /**< Stop of 8-bit x86-only register enum values */
 #define DR_REG_START_x64_8 DR_REG_SPL  /**< Start of 8-bit x64-only register enum values */
 #define DR_REG_STOP_x64_8  DR_REG_DIL  /**< Stop of 8-bit x64-only register enum values */
 #define DR_REG_START_MMX   DR_REG_MM0  /**< Start of mmx register enum values */
-#define DR_REG_STOP_MMX    DR_REG_MM7  /**< End of mmx register enum values */  
+#define DR_REG_STOP_MMX    DR_REG_MM7  /**< End of mmx register enum values */
 #define DR_REG_START_XMM   DR_REG_XMM0 /**< Start of xmm register enum values */
-#define DR_REG_STOP_XMM    DR_REG_XMM15/**< End of xmm register enum values */  
+#define DR_REG_STOP_XMM    DR_REG_XMM15/**< End of xmm register enum values */
 #define DR_REG_START_YMM   DR_REG_YMM0 /**< Start of ymm register enum values */
-#define DR_REG_STOP_YMM    DR_REG_YMM15/**< End of ymm register enum values */  
+#define DR_REG_STOP_YMM    DR_REG_YMM15/**< End of ymm register enum values */
 #define DR_REG_START_FLOAT DR_REG_ST0  /**< Start of floating-point-register enum values */
-#define DR_REG_STOP_FLOAT  DR_REG_ST7  /**< End of floating-point-register enum values */  
+#define DR_REG_STOP_FLOAT  DR_REG_ST7  /**< End of floating-point-register enum values */
 #define DR_REG_START_SEGMENT DR_SEG_ES /**< Start of segment register enum values */
-#define DR_REG_STOP_SEGMENT  DR_SEG_GS /**< End of segment register enum values */  
+#define DR_REG_STOP_SEGMENT  DR_SEG_GS /**< End of segment register enum values */
 #define DR_REG_START_DR    DR_REG_DR0  /**< Start of debug register enum values */
-#define DR_REG_STOP_DR     DR_REG_DR15 /**< End of debug register enum values */  
+#define DR_REG_STOP_DR     DR_REG_DR15 /**< End of debug register enum values */
 #define DR_REG_START_CR    DR_REG_CR0  /**< Start of control register enum values */
-#define DR_REG_STOP_CR     DR_REG_CR15 /**< End of control register enum values */  
+#define DR_REG_STOP_CR     DR_REG_CR15 /**< End of control register enum values */
 /**
- * Last valid register enum value.  Note: DR_REG_INVALID is now smaller 
+ * Last valid register enum value.  Note: DR_REG_INVALID is now smaller
  * than this value.
  */
 #define DR_REG_LAST_VALID_ENUM DR_REG_YMM15
@@ -550,9 +550,10 @@ typedef byte opnd_size_t; /* contains a DR_REG_ or OPSZ_ enum value */
  */
 struct _opnd_t {
     byte kind;
-    /* size field only used for immed_ints and addresses
-     * it holds a OPSZ_ field from decode.h 
-     * we need it so we can pick the proper instruction form for
+    /* Size field: used for immed_ints and addresses and registers,
+     * but for registers, if 0, the full size of the register is assumed.
+     * It holds a OPSZ_ field from decode.h.
+     * We need it so we can pick the proper instruction form for
      * encoding -- an alternative would be to split all the opcodes
      * up into different data size versions.
      */
@@ -625,39 +626,49 @@ enum {
 
 INSTR_INLINE
 /** Returns an empty operand. */
-opnd_t 
+opnd_t
 opnd_create_null(void);
 
 INSTR_INLINE
 /** Returns a register operand (\p r must be a DR_REG_ constant). */
-opnd_t 
+opnd_t
 opnd_create_reg(reg_id_t r);
 
-/** 
+INSTR_INLINE
+/**
+ * Returns a register operand corresponding to a part of the multimedia
+ * register represented by the DR_REG_ constant \p r, which must be
+ * an mmx, xmm, or ymm register.  For partial general-purpose registers,
+ * use the appropriate sub-register name with opnd_create_reg() instead.
+ */
+opnd_t
+opnd_create_reg_partial(reg_id_t r, opnd_size_t subsize);
+
+/**
  * Returns an immediate integer operand with value \p i and size
  * \p data_size; \p data_size must be a OPSZ_ constant.
  */
-opnd_t 
+opnd_t
 opnd_create_immed_int(ptr_int_t i, opnd_size_t data_size);
 
-/** 
+/**
  * Returns an immediate float operand with value \p f.
  * The caller's code should use proc_save_fpstate() or be inside a
  * clean call that has requested to preserve the floating-point state.
  */
-opnd_t 
+opnd_t
 opnd_create_immed_float(float f);
 
 INSTR_INLINE
 /** Returns a program address operand with value \p pc. */
-opnd_t 
+opnd_t
 opnd_create_pc(app_pc pc);
 
 /**
  * Returns a far program address operand with value \p seg_selector:pc.
  * \p seg_selector is a segment selector, not a DR_SEG_ constant.
  */
-opnd_t 
+opnd_t
 opnd_create_far_pc(ushort seg_selector, app_pc pc);
 
 /**
@@ -665,7 +676,7 @@ opnd_create_far_pc(ushort seg_selector, app_pc pc);
  * instr.  This operand can be used as an immediate integer or as a
  * direct call or jump target.  Its size is always #OPSZ_PTR.
  */
-opnd_t 
+opnd_t
 opnd_create_instr(instr_t *instr);
 
 /**
@@ -682,7 +693,7 @@ opnd_create_instr_ex(instr_t *instr, opnd_size_t size, ushort shift);
  * Returns a far instr_t pointer address with value \p seg_selector:instr.
  * \p seg_selector is a segment selector, not a DR_SEG_ constant.
  */
-opnd_t 
+opnd_t
 opnd_create_far_instr(ushort seg_selector, instr_t *instr);
 
 /**
@@ -700,7 +711,7 @@ opnd_create_far_instr(ushort seg_selector, instr_t *instr);
 opnd_t
 opnd_create_mem_instr(instr_t *instr, short disp, opnd_size_t data_size);
 
-/** 
+/**
  * Returns a memory reference operand that refers to the address:
  * - disp(base_reg, index_reg, scale)
  *
@@ -711,11 +722,11 @@ opnd_create_mem_instr(instr_t *instr, short disp, opnd_size_t data_size);
  * Both \p base_reg and \p index_reg must be DR_REG_ constants.
  * \p scale must be either 1, 2, 4, or 8.
  */
-opnd_t 
+opnd_t
 opnd_create_base_disp(reg_id_t base_reg, reg_id_t index_reg, int scale, int disp,
                       opnd_size_t data_size);
 
-/** 
+/**
  * Returns a memory reference operand that refers to the address:
  * - disp(base_reg, index_reg, scale)
  *
@@ -741,7 +752,7 @@ opnd_create_base_disp_ex(reg_id_t base_reg, reg_id_t index_reg, int scale,
                          bool encode_zero_disp, bool force_full_disp,
                          bool disp_short_addr);
 
-/** 
+/**
  * Returns a far memory reference operand that refers to the address:
  * - seg : disp(base_reg, index_reg, scale)
  *
@@ -753,11 +764,11 @@ opnd_create_base_disp_ex(reg_id_t base_reg, reg_id_t index_reg, int scale,
  * Both \p base_reg and \p index_reg must be DR_REG_ constants.
  * \p scale must be either 1, 2, 4, or 8.
  */
-opnd_t 
+opnd_t
 opnd_create_far_base_disp(reg_id_t seg, reg_id_t base_reg, reg_id_t index_reg, int scale,
                           int disp, opnd_size_t data_size);
 
-/** 
+/**
  * Returns a far memory reference operand that refers to the address:
  * - seg : disp(base_reg, index_reg, scale)
  *
@@ -800,7 +811,7 @@ opnd_create_far_base_disp_ex(reg_id_t seg, reg_id_t base_reg, reg_id_t index_reg
  * opnd_create_rel_addr() had been called) if it is used in any other
  * way.
  */
-opnd_t 
+opnd_t
 opnd_create_abs_addr(void *addr, opnd_size_t data_size);
 
 /**
@@ -820,7 +831,7 @@ opnd_create_abs_addr(void *addr, opnd_size_t data_size);
  * opnd_create_far_rel_addr() had been called) if it is used in any
  * other way.
  */
-opnd_t 
+opnd_t
 opnd_create_far_abs_addr(reg_id_t seg, void *addr, opnd_size_t data_size);
 #ifdef X64
 
@@ -857,7 +868,7 @@ opnd_create_far_abs_addr(reg_id_t seg, void *addr, opnd_size_t data_size);
  *
  * \note For 64-bit DR builds only.
  */
-opnd_t 
+opnd_t
 opnd_create_rel_addr(void *addr, opnd_size_t data_size);
 
 /**
@@ -893,56 +904,60 @@ opnd_create_rel_addr(void *addr, opnd_size_t data_size);
  *
  * \note For 64-bit DR builds only.
  */
-opnd_t 
+opnd_t
 opnd_create_far_rel_addr(reg_id_t seg, void *addr, opnd_size_t data_size);
 #endif
 
 
 /** Returns true iff \p opnd is an empty operand. */
-bool 
+bool
 opnd_is_null(opnd_t opnd);
 
 /** Returns true iff \p opnd is a register operand. */
-bool 
+bool
 opnd_is_reg(opnd_t opnd);
+
+/** Returns true iff \p opnd is a partial multimedia register operand. */
+bool
+opnd_is_reg_partial(opnd_t opnd);
 
 INSTR_INLINE
 /** Returns true iff \p opnd is an immediate (integer or float) operand. */
-bool 
+bool
 opnd_is_immed(opnd_t opnd);
 
 /** Returns true iff \p opnd is an immediate integer operand. */
-bool 
+bool
 opnd_is_immed_int(opnd_t opnd);
 
 /** Returns true iff \p opnd is an immediate float operand. */
-bool 
+bool
 opnd_is_immed_float(opnd_t opnd);
 
 INSTR_INLINE
 /** Returns true iff \p opnd is a (near or far) program address operand. */
-bool 
+bool
 opnd_is_pc(opnd_t opnd);
 
 /** Returns true iff \p opnd is a near (i.e., default segment) program address operand. */
-bool 
+bool
 opnd_is_near_pc(opnd_t opnd);
 
 /** Returns true iff \p opnd is a far program address operand. */
-bool 
+bool
 opnd_is_far_pc(opnd_t opnd);
 
 INSTR_INLINE
 /** Returns true iff \p opnd is a (near or far) instr_t pointer address operand. */
-bool 
+bool
 opnd_is_instr(opnd_t opnd);
 
 /** Returns true iff \p opnd is a near instr_t pointer address operand. */
-bool 
+bool
 opnd_is_near_instr(opnd_t opnd);
 
 /** Returns true iff \p opnd is a far instr_t pointer address operand. */
-bool 
+bool
 opnd_is_far_instr(opnd_t opnd);
 
 /** Returns true iff \p opnd is a memory reference to an instr_t address operand. */
@@ -950,7 +965,7 @@ bool
 opnd_is_mem_instr(opnd_t opnd);
 
 /** Returns true iff \p opnd is a (near or far) base+disp memory reference operand. */
-bool 
+bool
 opnd_is_base_disp(opnd_t opnd);
 
 INSTR_INLINE
@@ -958,72 +973,72 @@ INSTR_INLINE
  * Returns true iff \p opnd is a near (i.e., default segment) base+disp memory
  * reference operand.
  */
-bool 
+bool
 opnd_is_near_base_disp(opnd_t opnd);
 
 INSTR_INLINE
 /** Returns true iff \p opnd is a far base+disp memory reference operand. */
-bool 
+bool
 opnd_is_far_base_disp(opnd_t opnd);
 
-/** 
+/**
  * Returns true iff \p opnd uses vector indexing via a VSIB byte.  This
  * memory addressing form was introduced in Intel AVX2.
  */
 bool
 opnd_is_vsib(opnd_t opnd);
 
-/** 
+/**
  * Returns true iff \p opnd is a (near or far) absolute address operand.
  * Returns true for both base-disp operands with no base or index and
- * 64-bit non-base-disp absolute address operands. 
+ * 64-bit non-base-disp absolute address operands.
  */
-bool 
+bool
 opnd_is_abs_addr(opnd_t opnd);
 
-/** 
+/**
  * Returns true iff \p opnd is a near (i.e., default segment) absolute address operand.
  * Returns true for both base-disp operands with no base or index and
- * 64-bit non-base-disp absolute address operands. 
+ * 64-bit non-base-disp absolute address operands.
  */
-bool 
+bool
 opnd_is_near_abs_addr(opnd_t opnd);
 
-/** 
+/**
  * Returns true iff \p opnd is a far absolute address operand.
  * Returns true for both base-disp operands with no base or index and
- * 64-bit non-base-disp absolute address operands. 
+ * 64-bit non-base-disp absolute address operands.
  */
-bool 
+bool
 opnd_is_far_abs_addr(opnd_t opnd);
 #ifdef X64
 
 
 /**
- * Returns true iff \p opnd is a (near or far) pc-relative memory reference operand. 
+ * Returns true iff \p opnd is a (near or far) pc-relative memory reference operand.
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 opnd_is_rel_addr(opnd_t opnd);
 
 INSTR_INLINE
 /**
  * Returns true iff \p opnd is a near (i.e., default segment) pc-relative memory
- * reference operand. 
+ * reference operand.
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 opnd_is_near_rel_addr(opnd_t opnd);
 
 INSTR_INLINE
 /**
- * Returns true iff \p opnd is a far pc-relative memory reference operand. 
+ * Returns true iff \p opnd is a far pc-relative memory reference operand.
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 opnd_is_far_rel_addr(opnd_t opnd);
 #endif
 
@@ -1032,9 +1047,14 @@ opnd_is_far_rel_addr(opnd_t opnd);
  * Returns true iff \p opnd is a (near or far) memory reference operand
  * of any type: base-disp, absolute address, or pc-relative address.
  *
- * \note For 64-bit DR builds only.
+ * This routine (along with all other opnd_ routines) does consider
+ * multi-byte nops that use addressing operands, or the #OP_lea
+ * instruction's source operand, to be memory references: i.e., it
+ * only considers whether the operand calculates an address.  Use
+ * instr_reads_memory() to operate on a higher semantic level and rule
+ * out these corner cases.
  */
-bool 
+bool
 opnd_is_memory_reference(opnd_t opnd);
 
 /**
@@ -1051,51 +1071,51 @@ opnd_is_far_memory_reference(opnd_t opnd);
 bool
 opnd_is_near_memory_reference(opnd_t opnd);
 
-/** 
+/**
  * Return the data size of \p opnd as a OPSZ_ constant.
- * If \p opnd is a register returns the result of opnd_reg_get_size()
- * called on the DR_REG_ constant.
  * Returns OPSZ_NA if \p opnd does not have a valid size.
+ * \note A register operand may have a size smaller than the full size
+ * of its DR_REG_* register specifier.
  */
 opnd_size_t
 opnd_get_size(opnd_t opnd);
 
-/** 
+/**
  * Sets the data size of \p opnd.
  * Assumes \p opnd is an immediate integer, a memory reference,
  * or an instr_t pointer address operand.
  */
-void   
+void
 opnd_set_size(opnd_t *opnd, opnd_size_t newsize);
 
-/** 
+/**
  * Assumes \p opnd is a register operand.
  * Returns the register it refers to (a DR_REG_ constant).
  */
-reg_id_t  
+reg_id_t
 opnd_get_reg(opnd_t opnd);
 
 /** Assumes opnd is an immediate integer, returns its value. */
 ptr_int_t
 opnd_get_immed_int(opnd_t opnd);
 
-/** 
- * Assumes \p opnd is an immediate float and returns its value. 
+/**
+ * Assumes \p opnd is an immediate float and returns its value.
  * The caller's code should use proc_save_fpstate() or be inside a
  * clean call that has requested to preserve the floating-point state.
  */
-float  
+float
 opnd_get_immed_float(opnd_t opnd);
 
 /** Assumes \p opnd is a (near or far) program address, returns its value. */
-app_pc 
+app_pc
 opnd_get_pc(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a far program address.
  * Returns \p opnd's segment, a segment selector (not a DR_SEG_ constant).
  */
-ushort    
+ushort
 opnd_get_segment_selector(opnd_t opnd);
 
 /** Assumes \p opnd is an instr_t (near, far, or memory) operand and returns its value. */
@@ -1121,33 +1141,33 @@ opnd_get_base(opnd_t opnd);
 
 /**
  * Assumes \p opnd is a (near or far) base+disp memory reference.
- * Returns the displacement. 
+ * Returns the displacement.
  */
-int 
+int
 opnd_get_disp(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) base+disp memory reference; returns whether
  * encode_zero_disp has been specified for \p opnd.
  */
 bool
 opnd_is_disp_encode_zero(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) base+disp memory reference; returns whether
  * force_full_disp has been specified for \p opnd.
  */
 bool
 opnd_is_disp_force_full(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) base+disp memory reference; returns whether
  * disp_short_addr has been specified for \p opnd.
  */
 bool
 opnd_is_disp_short_addr(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) base+disp memory reference.
  * Returns the index register (a DR_REG_ constant).
  */
@@ -1155,18 +1175,18 @@ reg_id_t
 opnd_get_index(opnd_t opnd);
 
 /** Assumes \p opnd is a (near or far) base+disp memory reference.  Returns the scale. */
-int 
+int
 opnd_get_scale(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) memory reference of any type.
  * Returns \p opnd's segment (a DR_SEG_ constant), or DR_REG_NULL if it is a near
  * memory reference.
  */
-reg_id_t    
+reg_id_t
 opnd_get_segment(opnd_t opnd);
 
-/** 
+/**
  * Assumes \p opnd is a (near or far) absolute or pc-relative memory reference,
  * or a base+disp memory reference with no base or index register.
  * Returns \p opnd's absolute address (which will be pc-relativized on encoding
@@ -1175,14 +1195,14 @@ opnd_get_segment(opnd_t opnd);
 void *
 opnd_get_addr(opnd_t opnd);
 
-/** 
+/**
  * Returns the number of registers referred to by \p opnd. This will only
  * be non-zero for register operands and memory references.
  */
-int 
+int
 opnd_num_regs_used(opnd_t opnd);
 
-/** 
+/**
  * Used in conjunction with opnd_num_regs_used(), this routine can be used
  * to iterate through all registers used by \p opnd.
  * The index values begin with 0 and proceed through opnd_num_regs_used(opnd)-1.
@@ -1190,21 +1210,21 @@ opnd_num_regs_used(opnd_t opnd);
 reg_id_t
 opnd_get_reg_used(opnd_t opnd, int index);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * Returns the string name for \p reg.
  */
 const char *
 get_register_name(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * Returns the 16-bit version of \p reg.
  */
 reg_id_t
 reg_32_to_16(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * Returns the 8-bit version of \p reg (the least significant byte:
  * DR_REG_AL instead of DR_REG_AH if passed DR_REG_EAX, e.g.).  For 32-bit DR
@@ -1216,7 +1236,7 @@ reg_32_to_8(reg_id_t reg);
 #ifdef X64
 
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * Returns the 64-bit version of \p reg.
  *
@@ -1225,7 +1245,7 @@ reg_32_to_8(reg_id_t reg);
 reg_id_t
 reg_32_to_64(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 64-bit register constant.
  * Returns the 32-bit version of \p reg.
  *
@@ -1234,21 +1254,21 @@ reg_32_to_64(reg_id_t reg);
 reg_id_t
 reg_64_to_32(reg_id_t reg);
 
-/** 
+/**
  * Returns true iff \p reg refers to an extended register only available
  * in 64-bit mode and not in 32-bit mode (e.g., R8-R15, XMM8-XMM15, etc.)
  *
  * \note For 64-bit DR builds only.
  */
-bool 
+bool
 reg_is_extended(reg_id_t reg);
 #endif
 
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * If \p sz == OPSZ_2, returns the 16-bit version of \p reg.
- * For 64-bit versions of this library, if \p sz == OPSZ_8, returns 
+ * For 64-bit versions of this library, if \p sz == OPSZ_8, returns
  * the 64-bit version of \p reg.
  * Returns \p DR_REG_NULL when trying to get the 8-bit subregister of \p
  * DR_REG_ESI, \p DR_REG_EDI, \p DR_REG_EBP, or \p DR_REG_ESP in 32-bit mode.
@@ -1270,7 +1290,7 @@ reg_32_to_opsz(reg_id_t reg, opnd_size_t sz);
 reg_id_t
 reg_resize_to_opsz(reg_id_t reg, opnd_size_t sz);
 
-/**  
+/**
  * Assumes that \p reg is a DR_REG_ register constant.
  * If reg is used as part of the calling convention, returns which
  * parameter ordinal it matches (0-based); otherwise, returns -1.
@@ -1278,7 +1298,7 @@ reg_resize_to_opsz(reg_id_t reg, opnd_size_t sz);
 int
 reg_parameter_num(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a General Purpose Register,
  * i.e., rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, or a subset.
@@ -1286,7 +1306,7 @@ reg_parameter_num(reg_id_t reg);
 bool
 reg_is_gpr(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a segment (i.e., it's really a DR_SEG_
  * constant).
@@ -1294,93 +1314,93 @@ reg_is_gpr(reg_id_t reg);
 bool
 reg_is_segment(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to an xmm (128-bit SSE/SSE2) register
  * or a ymm (256-bit multimedia) register.
  */
-bool 
+bool
 reg_is_xmm(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a ymm (256-bit multimedia) register.
  */
-bool 
+bool
 reg_is_ymm(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to an mmx (64-bit) register.
  */
-bool 
+bool
 reg_is_mmx(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a floating-point register.
  */
-bool 
+bool
 reg_is_fp(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a 32-bit general-purpose register.
  */
-bool 
+bool
 reg_is_32bit(reg_id_t reg);
 
-/** 
+/**
  * Returns true iff \p opnd is a register operand that refers to a 32-bit
  * general-purpose register.
  */
-bool 
+bool
 opnd_is_reg_32bit(opnd_t opnd);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a 64-bit general-purpose register.
  */
-bool 
+bool
 reg_is_64bit(reg_id_t reg);
 
-/** 
+/**
  * Returns true iff \p opnd is a register operand that refers to a 64-bit
  * general-purpose register.
  */
-bool 
+bool
 opnd_is_reg_64bit(opnd_t opnd);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff it refers to a pointer-sized general-purpose register.
  */
-bool 
+bool
 reg_is_pointer_sized(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ 32-bit register constant.
  * Returns the pointer-sized version of \p reg.
  */
 reg_id_t
 reg_to_pointer_sized(reg_id_t reg);
 
-/** 
+/**
  * Returns true iff \p opnd is a register operand that refers to a
  * pointer-sized general-purpose register.
  */
-bool 
+bool
 opnd_is_reg_pointer_sized(opnd_t opnd);
 
-/** 
+/**
  * Assumes that \p r1 and \p r2 are both DR_REG_ constants.
  * Returns true iff \p r1's register overlaps \p r2's register
  * (e.g., if \p r1 == DR_REG_AX and \p r2 == DR_REG_EAX).
  */
-bool 
+bool
 reg_overlap(reg_id_t r1, reg_id_t r2);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns \p reg's representation as 3 bits in a modrm byte
  * (the 3 bits are the lower-order bits in the return value).
@@ -1388,27 +1408,27 @@ reg_overlap(reg_id_t r1, reg_id_t r2);
 byte
 reg_get_bits(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns the OPSZ_ constant corresponding to the register size.
  * Returns OPSZ_NA if reg is not a DR_REG_ constant.
  */
-opnd_size_t 
+opnd_size_t
 reg_get_size(reg_id_t reg);
 
-/** 
+/**
  * Assumes that \p reg is a DR_REG_ constant.
  * Returns true iff \p opnd refers to reg directly or refers to a register
  * that overlaps \p reg (e.g., DR_REG_AX overlaps DR_REG_EAX).
  */
-bool 
+bool
 opnd_uses_reg(opnd_t opnd, reg_id_t reg);
 
 /** Set the displacement of a memory reference operand \p opnd to \p disp. */
 void
 opnd_set_disp(opnd_t *opnd, int disp);
 
-/** 
+/**
  * Set the displacement and encoding controls of a memory reference operand:
  * - If \p encode_zero_disp, a zero value for \p disp will not be omitted;
  * - If \p force_full_disp, a small value for \p disp will not occupy only one byte.
@@ -1421,55 +1441,55 @@ void
 opnd_set_disp_ex(opnd_t *opnd, int disp, bool encode_zero_disp, bool force_full_disp,
                  bool disp_short_addr);
 
-/** 
+/**
  * Assumes that both \p old_reg and \p new_reg are DR_REG_ constants.
  * Replaces all occurrences of \p old_reg in \p *opnd with \p new_reg.
  */
-bool 
+bool
 opnd_replace_reg(opnd_t *opnd, reg_id_t old_reg, reg_id_t new_reg);
 
-/** Returns true iff \p op1 and \p op2 are indistinguishable. 
+/** Returns true iff \p op1 and \p op2 are indistinguishable.
  *  If either uses variable operand sizes, the default size is assumed.
  */
-bool 
+bool
 opnd_same(opnd_t op1,opnd_t op2);
 
-/** 
+/**
  * Returns true iff \p op1 and \p op2 are both memory references and they
  * are indistinguishable, ignoring data size.
  */
-bool 
+bool
 opnd_same_address(opnd_t op1,opnd_t op2);
 
-/** 
+/**
  * Returns true iff there exists some register that is referred to (directly
  * or overlapping) by both \p op1 and \p op2.
  */
-bool 
+bool
 opnd_share_reg(opnd_t op1, opnd_t op2);
 
-/** 
+/**
  * Returns true iff \p def, considered as a write, affects \p use.
  * Is conservative, so if both \p def and \p use are memory references,
  * will return true unless it can disambiguate them based on their
  * registers and displacement.
  */
-bool 
+bool
 opnd_defines_use(opnd_t def, opnd_t use);
 
-/** 
+/**
  * Assumes \p size is a OPSZ_ or a DR_REG_ constant.
  * If \p size is a DR_REG_ constant, first calls reg_get_size(\p size)
- * to get a OPSZ_ constant.
+ * to get a OPSZ_ constant that assumes the entire register is used.
  * Returns the number of bytes the OPSZ_ constant represents.
  * If OPSZ_ is a variable-sized size, returns the default size,
  * which may or may not match the actual size decided up on at
  * encoding time (that final size depends on other operands).
  */
-uint 
+uint
 opnd_size_in_bytes(opnd_size_t size);
 
-/** 
+/**
  * Returns the appropriate OPSZ_ constant for the given number of bytes.
  * Returns OPSZ_NA if there is no such constant.
  * The intended use case is something like "opnd_size_in_bytes(sizeof(foo))" for
@@ -1479,35 +1499,48 @@ opnd_size_in_bytes(opnd_size_t size);
 opnd_size_t
 opnd_size_from_bytes(uint bytes);
 
-/** 
- * Shrinks all 32-bit registers in \p opnd to their 16-bit versions.  
+/**
+ * Shrinks all 32-bit registers in \p opnd to their 16-bit versions.
  * Also shrinks the size of immediate integers and memory references from
  * OPSZ_4 to OPSZ_2.
  */
-opnd_t 
+opnd_t
 opnd_shrink_to_16_bits(opnd_t opnd);
 #ifdef X64
 
 
-/** 
- * Shrinks all 64-bit registers in \p opnd to their 32-bit versions.  
+/**
+ * Shrinks all 64-bit registers in \p opnd to their 32-bit versions.
  * Also shrinks the size of immediate integers and memory references from
  * OPSZ_8 to OPSZ_4.
  *
  * \note For 64-bit DR builds only.
  */
-opnd_t 
+opnd_t
 opnd_shrink_to_32_bits(opnd_t opnd);
 #endif
 
 
-/** 
+/**
  * Returns the value of the register \p reg, selected from the passed-in
  * register values.  Supports only general-purpose registers.
  * \p mc->flags must include DR_MC_CONTROL and DR_MC_INTEGER.
  */
 reg_t
 reg_get_value(reg_id_t reg, dr_mcontext_t *mc);
+
+/**
+ * Returns the value of the register \p reg as stored in \p mc, or
+ * for an mmx register as stored in the physical register.
+ * Up to sizeof(dr_ymm_t) bytes will be written to \p val.
+ *
+ * This routine does not support floating-point registers.
+ *
+ * \note \p mc->flags must include the appropriate flag for the
+ * requested register.
+ */
+bool
+reg_get_value_ex(reg_id_t reg, dr_mcontext_t *mc, OUT byte *val);
 
 /**
  * Sets the register \p reg in the passed in mcontext \p mc to \p value.
@@ -1518,8 +1551,8 @@ reg_get_value(reg_id_t reg, dr_mcontext_t *mc);
 void
 reg_set_value(reg_id_t reg, dr_mcontext_t *mc, reg_t value);
 
-/** 
- * Returns the effective address of \p opnd, computed using the passed-in 
+/**
+ * Returns the effective address of \p opnd, computed using the passed-in
  * register values.  If \p opnd is a far address, ignores that aspect
  * except for TLS references on Windows (fs: for 32-bit, gs: for 64-bit)
  * or typical fs: or gs: references on Linux.  For far addresses the
@@ -1594,7 +1627,7 @@ enum {
     OPSZ_4x8,  /**< Full register size with no variation by prefix.
                 *   Used for control and debug register moves. */
     OPSZ_6x10, /**< Intel 's': 6-byte (10-byte for 64-bit mode) table base + limit */
-    /** 
+    /**
      * Stack operands not only vary by operand size specifications but also
      * by 32-bit versus 64-bit processor mode.
      */
@@ -1615,7 +1648,7 @@ enum {
      */
     OPSZ_1_reg4,  /**< Intel Rd/Mb: zero-extends if reg; used by pextrb */
     OPSZ_2_reg4,  /**< Intel Rd/Mw: zero-extends if reg; used by pextrw */
-    OPSZ_4_reg16, /**< Intel Udq/Md: sub-xmm but we consider that whole xmm;
+    OPSZ_4_reg16, /**< Intel Udq/Md: 4 bytes of xmm or 4 bytes of memory;
                    *   used by insertps. */
     /* Sizes used by new instructions */
     OPSZ_xsave, /**< Size is > 512 bytes: use cpuid to determine.
@@ -1629,6 +1662,7 @@ enum {
     OPSZ_8_rex16_short4,  /**< Intel 'v' * 2 (far call/ret) */
     OPSZ_12_rex40_short6, /**< unresolved iret */
     OPSZ_16_vex32,        /**< 16 or 32 bytes depending on VEX.L (AMD/Intel 'x'). */
+    OPSZ_15,    /**< All but one byte of an xmm register (used by OP_vpinsrb). */
     /* Add new size here.  Also update size_names[] in encode.c. */
     OPSZ_LAST,
 };
@@ -1674,7 +1708,7 @@ enum {
  * The default is to use AT&T-style syntax, unless the \ref op_syntax_intel
  * "-syntax_intel" runtime option is specified.
  */
-void 
+void
 opnd_disassemble(void *drcontext, opnd_t opnd, file_t outfile);
 
 /**
