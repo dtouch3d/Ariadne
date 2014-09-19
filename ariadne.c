@@ -58,18 +58,6 @@ event_thread_init(void* drcontext)
     dr_mutex_unlock(num_threads_lock);
 
     thread_info->num_locks = 0;
-
-    if (thread_info->tid == 0)
-    {
-        running_thread = 1;
-        return;
-    } else {
-
-        while (running_thread != thread_info->tid) {
-            dr_printf("[+] Thread #%d waiting...\n", thread_info->tid);
-            dr_sleep(500);
-        }
-    }
 }
 
 static void
@@ -79,13 +67,9 @@ event_thread_exit(void* drcontext)
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
     dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
-
-    if (tid == 0)
-        return;
-
-    running_thread = tid + 1;
 }
-/* Checks wether mem ref is in stack frame aka is local */
+
+/* Checks weather mem ref is in stack frame aka is local */
 static bool
 opnd_is_stack_addr(void* drcontext, opnd_t opnd)
 {

@@ -14,6 +14,8 @@ add_library(ariadne SHARED ariadne.c)
 find_package(DynamoRIO)
 find_package(DrMemoryFramework)
 
+#set(CMAKE_BUILD_TYPE "Debug")
+
 if (NOT DynamoRIO_FOUND)
   message(FATAL_ERROR "DynamoRIO package required to build")
 endif(NOT DynamoRIO_FOUND)
