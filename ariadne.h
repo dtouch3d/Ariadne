@@ -118,7 +118,7 @@ pthread_create_event(void *wrapcxt, void **user_data)
     /* pthread_create wrap here */
     show_linenum(wrapcxt, __func__);
 
-    void* (*thread_func) = (void* (*)(void*))drwrap_get_arg(wrapcxt, 2);
+    void* (*thread_func)(void*) = (void* (*)(void*))drwrap_get_arg(wrapcxt, 2);
 
     /* thread_func_post would never be called because of pthread_exit */
     drwrap_wrap((app_pc)thread_func, thread_func_pre, NULL);
