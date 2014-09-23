@@ -9,6 +9,7 @@ static char* const modtable[] =
     "libc"
 };
 
+static pthread_mutex_t run_lock;
 static int num_threads = 0;
 static void* num_threads_lock;
 
@@ -109,6 +110,7 @@ static void
 thread_func_pre(void *wrapcxt, void **user_data)
 {
     dr_printf("thread_func_pre\n");
+    pthread_mutex_lock(&run_lock);
     return;
 }
 
@@ -138,6 +140,7 @@ pthread_exit_event(void *wrapcxt, void **user_data)
     if (thread_info->tid > 0)
     {
         dr_printf("thread #%d exiting\n", thread_info->tid);
+        pthread_mutex_unlock(&run_lock);
     }
 
     return;
