@@ -106,10 +106,23 @@ findfunc(const char *name)
 }
 
 static void
+thread_func_pre(void *wrapcxt, void **user_data)
+{
+    dr_printf("thread_func_pre\n");
+    return;
+}
+
+static void
 pthread_create_event(void *wrapcxt, void **user_data)
 {
     /* pthread_create wrap here */
     show_linenum(wrapcxt, __func__);
+
+    void* (*thread_func) = (void* (*)(void*))drwrap_get_arg(wrapcxt, 2);
+
+    /* thread_func_post would never be called because of pthread_exit */
+    drwrap_wrap((app_pc)thread_func, thread_func_pre, NULL);
+
     return;
 }
 
@@ -118,6 +131,15 @@ pthread_exit_event(void *wrapcxt, void **user_data)
 {
     /* pthread_exit wrap here */
     //show_linenum(wrapcxt, __func__);
+
+    void* drcontext = drwrap_get_drcontext(wrapcxt);
+    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+
+    if (thread_info->tid > 0)
+    {
+        dr_printf("thread #%d exiting\n", thread_info->tid);
+    }
+
     return;
 }
 
