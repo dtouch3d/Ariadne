@@ -22,8 +22,8 @@ typedef struct
     unsigned int tid;
     void* lock[MAX_LOCKS];
     size_t num_locks;
-    drvector_t sbag;
-    drvector_t pbag;
+    drvector_t* sbag;
+    drvector_t* pbag;
 } thread_info_t;
 
 typedef struct
@@ -64,6 +64,9 @@ malloc_pre_event(void *wrapcxt, void **user_data);
 
 static void
 malloc_post_event(void *wrapcxt, void *user_data);
+
+static thread_info_t*
+get_thread_info(void* wrapcxt);
 
 static void
 show_linenum(void* wrapcxt, const char* funcname);
@@ -142,8 +145,7 @@ pthread_exit_event(void *wrapcxt, void **user_data)
     /* pthread_exit wrap here */
     //show_linenum(wrapcxt, __func__);
 
-    void* drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
 
     if (thread_info->tid > 0)
     {
@@ -160,8 +162,7 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     /* pthread_mutex_lock wrap here */
     void* lock = drwrap_get_arg(wrapcxt, 0);
 
-    void* drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
 
     /* in "main" */
     if (thread_info->tid == 0)
@@ -185,9 +186,7 @@ pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 static void
 malloc_pre_event(void *wrapcxt, void **user_data)
 {
-
-    void* drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
 
     /* not in "main" */
     if (thread_info->tid != 0)
@@ -203,8 +202,7 @@ malloc_pre_event(void *wrapcxt, void **user_data)
 static void
 malloc_post_event(void *wrapcxt, void *user_data)
 {
-    void* drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
 
     /* not in "main" */
     if (thread_info->tid != 0)
@@ -226,7 +224,30 @@ malloc_post_event(void *wrapcxt, void *user_data)
 static void
 pthread_join_event(void *wrapcxt, void **user_data)
 {
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
+
+    int i;
+
+    drvector_t* sbag = thread_info->sbag;
+    drvector_t* pbag = thread_info->pbag;
+
+    for(i=0; i<thread_info->pbag->entries; i++)
+    {
+        void* data = drvector_get_entry(pbag, i);
+        drvector_append(sbag, data);
+    }
+
+    drvector_delete(pbag);
+    drvector_init(pbag, 10, false /*synch*/, NULL);
     return;
+}
+
+static thread_info_t*
+get_thread_info(void* wrapcxt)
+{
+    void* drcontext = drwrap_get_drcontext(wrapcxt);
+    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
+    return thread_info;
 }
 
 /* funcname is evaluated at compile time with __func__ macro by the caller */

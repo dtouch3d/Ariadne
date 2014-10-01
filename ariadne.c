@@ -57,9 +57,13 @@ event_thread_init(void* drcontext)
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
 
-    drvector_init(&thread_info->sbag, 10, false /*synch*/, NULL);
-    drvector_init(&thread_info->pbag, 10, false /*synch*/, NULL);
-    drvector_append(&thread_info->sbag, &thread_info->tid);
+    thread_info->sbag = dr_global_alloc(sizeof(drvector_t));
+    thread_info->pbag = dr_global_alloc(sizeof(drvector_t));
+
+    drvector_init(thread_info->sbag, 10, false /*synch*/, NULL);
+    drvector_init(thread_info->pbag, 10, false /*synch*/, NULL);
+
+    drvector_append(thread_info->sbag, &thread_info->tid);
 
     thread_info->num_locks = 0;
 }
@@ -71,8 +75,8 @@ event_thread_exit(void* drcontext)
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
 
-    drvector_delete(&thread_info->sbag);
-    drvector_delete(&thread_info->pbag);
+    drvector_delete(thread_info->sbag);
+    drvector_delete(thread_info->pbag);
 
     dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
 }

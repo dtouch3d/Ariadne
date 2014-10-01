@@ -20,3 +20,6 @@ add_test_ariadne(hello hello.c)
 
 add_executable(malloc malloc.c)
 add_test_ariadne(malloc malloc.c)
+
+add_executable(join join.c)
+add_test_ariadne(join join.c)
