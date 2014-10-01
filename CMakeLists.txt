@@ -24,6 +24,7 @@ configure_DynamoRIO_client(ariadne)
 use_DynamoRIO_extension(ariadne drwrap)
 use_DynamoRIO_extension(ariadne drsyms)
 use_DynamoRIO_extension(ariadne drmgr)
+use_DynamoRIO_extension(ariadne drcontainers)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E
     create_symlink ${PROJECT_SOURCE_DIR}/dynamorio ${PROJECT_BINARY_DIR}/dynamorio)
