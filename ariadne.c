@@ -52,13 +52,14 @@ event_thread_init(void* drcontext)
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
 
-    drvector_init(&thread_info->sbag, 10, false /* synch */, NULL);
-    drvector_init(&thread_info->pbag, 10, false /* synch */, NULL);
-
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
+
+    drvector_init(&thread_info->sbag, 10, false /*synch*/, NULL);
+    drvector_init(&thread_info->pbag, 10, false /*synch*/, NULL);
+    drvector_append(&thread_info->sbag, &thread_info->tid);
 
     thread_info->num_locks = 0;
 }

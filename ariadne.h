@@ -48,6 +48,9 @@ static void
 pthread_create_event(void *wrapcxt, void **user_data);
 
 static void
+pthread_join_event(void *wrapcxt, void **user_data);
+
+static void
 pthread_exit_event(void *wrapcxt, void **user_data);
 
 static void
@@ -92,6 +95,7 @@ static symtab_t symtab[] = {
     "pthread_exit",         pthread_exit_event, NULL,
     "pthread_mutex_lock",   pthread_mutex_lock_event, NULL,
     "pthread_mutex_unlock", pthread_mutex_unlock_event, NULL,
+    "pthread_join",         pthread_join_event, NULL,
     /* libc */
     "malloc" ,              malloc_pre_event, malloc_post_event
 };
@@ -219,7 +223,11 @@ malloc_post_event(void *wrapcxt, void *user_data)
     dr_printf("Malloc : addr = %p size = %d\n", retval, (size_t)user_data);
 }
 
-
+static void
+pthread_join_event(void *wrapcxt, void **user_data)
+{
+    return;
+}
 
 /* funcname is evaluated at compile time with __func__ macro by the caller */
 static void
