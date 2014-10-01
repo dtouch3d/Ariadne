@@ -1,3 +1,5 @@
+#include "drvector.h"
+
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 #define MAX_LOCKS 100
 #define MAX_CHUNKS 100
@@ -20,6 +22,8 @@ typedef struct
     unsigned int tid;
     void* lock[MAX_LOCKS];
     size_t num_locks;
+    drvector_t sbag;
+    drvector_t pbag;
 } thread_info_t;
 
 typedef struct

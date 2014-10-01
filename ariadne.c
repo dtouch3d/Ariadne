@@ -52,6 +52,9 @@ event_thread_init(void* drcontext)
 
     drmgr_set_tls_field(drcontext, tls_index, thread_info);
 
+    drvector_init(&thread_info->sbag, 10, false /* synch */, NULL);
+    drvector_init(&thread_info->pbag, 10, false /* synch */, NULL);
+
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
     num_threads++;
@@ -66,6 +69,10 @@ event_thread_exit(void* drcontext)
     thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
+
+    drvector_delete(&thread_info->sbag);
+    drvector_delete(&thread_info->pbag);
+
     dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
 }
 
