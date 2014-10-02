@@ -58,8 +58,8 @@ event_thread_init(void* drcontext)
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
 
-    /*thread_info->sbag = dr_global_alloc(sizeof(drvector_t));*/
-    /*thread_info->pbag = dr_global_alloc(sizeof(drvector_t));*/
+    thread_info->sbag = dr_global_alloc(sizeof(drvector_t));
+    thread_info->pbag = dr_global_alloc(sizeof(drvector_t));
 
     drvector_init(thread_info->sbag, 10, false /*synch*/, NULL);
     drvector_init(thread_info->pbag, 10, false /*synch*/, NULL);
@@ -82,17 +82,19 @@ event_thread_exit(void* drcontext)
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
 
+
     int i;
     drvector_t* sbag = thread_info->sbag;
-
-    /* Here we join the sbag of spawned thread with it's parent's pbag.
-     * For now we assume no nested parallelism */
-    for(i=0; i<sbag->entries; i++)
+    if (tid > 0)
     {
-        [>drvector_append(main_pbag, drvector_get_entry(sbag, i));<]
-    }
+        /* Here we join the sbag of spawned thread with it's parent's pbag.
+         * For now we assume no nested parallelism */
+        for(i=0; i<sbag->entries; i++)
+        {
+            drvector_append(main_pbag, drvector_get_entry(sbag, i));
+        }
 
-    if (tid == 0)
+    } else if (tid == 0)
     {
         dr_printf("[+] sbag:");
         for(i=0; i<sbag->entries; i++)

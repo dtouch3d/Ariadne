@@ -16,16 +16,17 @@ void *PrintHello(void *threadid)
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
-   pthread_t threads[NUM_THREADS];
-   int rc;
-   long t;
-   for(t=0;t<NUM_THREADS;t++){
-     rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
-     if (rc){
-       printf("ERROR; return code from pthread_create() is %d\n", rc);
-       exit(-1);
-       }
-     }
+    pthread_t threads[NUM_THREADS];
+    int rc;
+    long t;
+    for(t=0;t<NUM_THREADS;t++){
+        rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
+        if (rc){
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+        pthread_join(threads[t], NULL);
+    }
 
    /* Last thing that main() should do */
    pthread_exit(NULL);

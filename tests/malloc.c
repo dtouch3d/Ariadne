@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
            printf("ERROR; return code from pthread_create() is %d\n", rc);
            exit(-1);
        }
+       pthread_join(threads[t], NULL);
    }
 
    /* Last thing that main() should do */
