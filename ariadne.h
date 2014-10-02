@@ -19,7 +19,7 @@ static int tls_index;
 
 typedef struct
 {
-    unsigned int tid;
+    uintptr_t tid;
     void* lock[MAX_LOCKS];
     size_t num_locks;
     drvector_t* sbag;
@@ -239,8 +239,11 @@ pthread_join_event(void *wrapcxt, void **user_data)
         drvector_append(sbag, data);
     }
 
-    drvector_delete(pbag);
-    drvector_init(pbag, 10, false /*synch*/, NULL);
+    //drvector_delete(pbag);
+    //drvector_init(pbag, 16, true [>synch<], NULL);
+
+    pbag->entries = 0;
+
     return;
 }
 
@@ -284,4 +287,16 @@ show_linenum(void* wrapcxt, const char* funcname)
      * and print hex address otherwise
      */
     dr_printf("%s at %s:%d\n", funcname, sym.file, sym.line);
+}
+
+static void
+print_bag(drvector_t* bag)
+{
+    int i;
+    for(i=0; i<bag->entries; i++)
+    {
+        uintptr_t stid = drvector_get_entry(bag, i);
+        dr_printf("%d ", stid);
+    }
+    dr_printf("\n");
 }

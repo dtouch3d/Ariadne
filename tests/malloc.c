@@ -10,14 +10,12 @@ void *PrintHello(void *threadid)
    long tid;
    tid = (long)threadid;
 
-   pthread_mutex_lock(&run_lock);
    int* array;
    array = malloc(10*sizeof(int));
 
    printf("Hello World! It's me, thread #%ld!\n", tid);
 
    free(array);
-   pthread_mutex_unlock(&run_lock);
    pthread_exit(NULL);
 }
 
@@ -29,12 +27,13 @@ int main(int argc, char *argv[])
    long t;
 
    for(t=0;t<NUM_THREADS;t++){
+       pthread_mutex_lock(&run_lock);
        rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
        if (rc){
            printf("ERROR; return code from pthread_create() is %d\n", rc);
            exit(-1);
        }
-       pthread_join(threads[t], NULL);
+       pthread_mutex_unlock(&run_lock);
    }
 
    /* Last thing that main() should do */

@@ -61,8 +61,8 @@ event_thread_init(void* drcontext)
     thread_info->sbag = dr_global_alloc(sizeof(drvector_t));
     thread_info->pbag = dr_global_alloc(sizeof(drvector_t));
 
-    drvector_init(thread_info->sbag, 10, false /*synch*/, NULL);
-    drvector_init(thread_info->pbag, 10, false /*synch*/, NULL);
+    drvector_init(thread_info->sbag, 16, true /*synch*/, NULL);
+    drvector_init(thread_info->pbag, 16, true /*synch*/, NULL);
 
     drvector_append(thread_info->sbag, (void*)thread_info->tid);
 
@@ -82,9 +82,10 @@ event_thread_exit(void* drcontext)
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
 
-
     int i;
     drvector_t* sbag = thread_info->sbag;
+    drvector_t* pbag = thread_info->pbag;
+
     if (tid > 0)
     {
         /* Here we join the sbag of spawned thread with it's parent's pbag.
@@ -94,19 +95,18 @@ event_thread_exit(void* drcontext)
             drvector_append(main_pbag, drvector_get_entry(sbag, i));
         }
 
-    } else if (tid == 0)
+    } else /* main thread */
     {
         dr_printf("[+] sbag:");
-        for(i=0; i<sbag->entries; i++)
-        {
-            uintptr_t stid = drvector_get_entry(main_sbag, i);
-            dr_printf("%d ", stid);
-        }
-        dr_printf("\n");
+        print_bag(sbag);
+
+        dr_printf("[+] pbag:");
+        print_bag(pbag);
     }
 
-    drvector_delete(thread_info->sbag);
-    drvector_delete(thread_info->pbag);
+    /* XXX: Hic sunt minor dracones */
+    /*drvector_delete(thread_info->sbag);*/
+    /*drvector_delete(thread_info->pbag);*/
 
     dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
 }
