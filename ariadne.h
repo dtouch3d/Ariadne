@@ -40,6 +40,9 @@ typedef struct
 } malloc_chunk_t;
 
 
+drvector_t* main_sbag;
+drvector_t* main_pbag;
+
 static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
 static void* malloc_table_lock;
@@ -152,7 +155,6 @@ pthread_exit_event(void *wrapcxt, void **user_data)
         dr_printf("thread #%d exiting\n", thread_info->tid);
         pthread_mutex_unlock(&run_lock);
     }
-
     return;
 }
 

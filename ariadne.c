@@ -65,6 +65,12 @@ event_thread_init(void* drcontext)
 
     drvector_append(thread_info->sbag, &thread_info->tid);
 
+    if (thread_info->tid == 0)
+    {
+        main_sbag = thread_info->sbag;
+        main_pbag = thread_info->pbag;
+    }
+
     thread_info->num_locks = 0;
 }
 
@@ -74,6 +80,14 @@ event_thread_exit(void* drcontext)
     thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
     dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
     int tid = thread_info->tid;
+
+    int i;
+    drvector_t* sbag = thread_info->sbag;
+
+    for(i=0; i<sbag->entries; i++)
+    {
+        drvector_append(main_pbag, drvector_get_entry(sbag, i));
+    }
 
     drvector_delete(thread_info->sbag);
     drvector_delete(thread_info->pbag);
