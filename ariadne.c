@@ -2,6 +2,7 @@
 #include "drwrap.h"
 #include "drsyms.h"
 #include "drmgr.h"
+#include "umbra.h"
 #include <string.h>
 #include <stdint.h>
 
@@ -160,21 +161,22 @@ static void
 event_exit(void)
 {
     drwrap_exit();
-    drsym_exit();
     drmgr_exit();
-    /*umbra_exit();*/
+    drsym_exit();
     dr_mutex_destroy(num_threads_lock);
     dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
+    if (umbra_exit() != DRMF_SUCCESS)
+        dr_printf("[!] Umbra exit error!\n");
 }
 
 
 DR_EXPORT void
 dr_init(client_id_t id)
 {
-    /*umbra_init(id);*/
-    drwrap_init();
     drmgr_init();
+    umbra_init(id);
+    drwrap_init();
     drsym_init(0);
 
     drmgr_register_module_load_event(event_module_load);
