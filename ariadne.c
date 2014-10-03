@@ -46,6 +46,44 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
     }
 }
 
+/* We use 1 byte per 4 bytes of memory, indicating the thread of the last
+ * access to memory.
+ */
+#define SHADOW_GRANULARITY 4
+#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_DOWN_4X
+
+#define SHADOW_DEFAULT_VALUE      19
+#define SHADOW_DEFAULT_VALUE_SIZE 1
+
+uint
+shadow_get_byte(app_pc addr)
+{
+    byte val;
+    size_t app_size = SHADOW_GRANULARITY;
+    size_t shdw_size = sizeof(val);
+    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, &val);
+
+    if (res != DRMF_SUCCESS || shdw_size != sizeof(val))
+    {
+        dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
+    }
+    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, sizeof(val));
+    return val;
+}
+
+void
+shadow_set_byte(app_pc addr, byte val)
+{
+    size_t app_size = SHADOW_GRANULARITY;
+    size_t shdw_size = sizeof(val);
+    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, &val);
+    if (res != DRMF_SUCCESS || shdw_size != sizeof(val))
+    {
+        dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
+    }
+    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, sizeof(val));
+}
+
 static void
 event_thread_init(void* drcontext)
 {
@@ -112,9 +150,8 @@ event_thread_exit(void* drcontext)
     dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
 }
 
-/* Checks weather mem ref is in stack frame aka is local */
-static bool
-opnd_is_stack_addr(void* drcontext, opnd_t opnd)
+app_pc
+opnd_calc_address(void* drcontext, opnd_t opnd)
 {
     dr_mcontext_t mcontext;
     mcontext.flags = DR_MC_CONTROL | DR_MC_INTEGER;
@@ -122,9 +159,7 @@ opnd_is_stack_addr(void* drcontext, opnd_t opnd)
 
     dr_get_mcontext(drcontext, &mcontext);
 
-    app_pc addr = opnd_compute_address(opnd, &mcontext);
-
-    return addr <= (app_pc)mcontext.xsp && addr >= (app_pc)mcontext.xbp;
+    return opnd_compute_address(opnd, &mcontext);
 }
 
 /* Called for every instr on bb */
@@ -136,36 +171,49 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
     int i;
     if (instr_get_app_pc(instr) == NULL)
         return DR_EMIT_DEFAULT;
-    if (instr_reads_memory(instr)) {
-        for (i=0; i<instr_num_srcs(instr); i++) {
+    if (instr_reads_memory(instr))
+    {
+        for (i=0; i<instr_num_srcs(instr); i++)
+        {
             opnd_t opnd = instr_get_src(instr, i);
-            if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
-                /*instrument_mem(drcontext, bb, instr, i, false);*/
-                /*dr_printf("[+] global memory access!\n");*/
+            if (opnd_is_memory_reference(opnd))
+            {
+                /*print_malloc_chunks();*/
+                app_pc addr_read = opnd_calc_address(drcontext, opnd);
+                if(in_malloc_chunk(addr_read))
+                {
+                    /*instrument_mem(drcontext, bb, instr, i, false);*/
+                    dr_printf("[+] global memory read!\n");
+
+                    shadow_set_byte(addr_read, 17);
+                    uint accessor = shadow_get_byte(addr_read);
+                    dr_printf("last accessor of %p : %d\n", addr_read, accessor);
+                    dr_printf("thread id #%d\n", dr_get_thread_id(drcontext));
+
+                }
             }
         }
     }
     if (instr_writes_memory(instr)) {
         for (i=0; i<instr_num_dsts(instr); i++) {
             opnd_t opnd = instr_get_dst(instr, i);
-            if (opnd_is_memory_reference(opnd) && !opnd_is_stack_addr(drcontext, opnd)) {
-                /*dr_printf("[+] global memory access!\n");*/
-                /*instrument_mem(drcontext, bb, instr, i, true);*/
+            if (opnd_is_memory_reference(opnd))
+            {
+                app_pc addr_write = opnd_calc_address(drcontext, opnd);
+                if(in_malloc_chunk(addr_write))
+                {
+                    /*instrument_mem(drcontext, bb, instr, i, false);*/
+                    dr_printf("[+] global memory write!\n");
+
+                    uint accessor = shadow_get_byte(addr_write);
+                    dr_printf("last accessor of %p : %d\n", addr_write, accessor);
+                    dr_printf("thread id #%d\n", dr_get_thread_id(drcontext));
+                }
             }
         }
     }
     return DR_EMIT_DEFAULT;
 }
-
-/* We use 1 byte per 4 bytes of memory, indicating the thread of the last
- * access to memory.
- */
-#define SHADOW_GRANULARITY 4
-#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_DOWN_2X
-
-#define SHADOW_DEFAULT_VALUE      0
-#define SHADOW_DEFAULT_VALUE_SIZE 1
-
 
 static void
 shadow_memory_init(void)
@@ -174,9 +222,7 @@ shadow_memory_init(void)
 
     memset(&umbra_map_ops, 0, sizeof(umbra_map_ops));
     umbra_map_ops.struct_size = sizeof(umbra_map_ops);
-    umbra_map_ops.flags =
-        UMBRA_MAP_CREATE_SHADOW_ON_TOUCH |
-        UMBRA_MAP_SHADOW_SHARED_READONLY;
+    umbra_map_ops.flags = UMBRA_MAP_CREATE_SHADOW_ON_TOUCH;
     umbra_map_ops.scale = SHADOW_MAP_SCALE;
     umbra_map_ops.default_value = SHADOW_DEFAULT_VALUE;
     umbra_map_ops.default_value_size = SHADOW_DEFAULT_VALUE_SIZE;
@@ -229,4 +275,6 @@ dr_init(client_id_t id)
     runlock = dr_mutex_create();
 
     tls_index = drmgr_register_tls_field();
+
+    memset(malloc_table, 0, MAX_CHUNKS*sizeof(malloc_chunk_t));
 }

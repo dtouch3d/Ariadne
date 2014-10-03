@@ -2,7 +2,7 @@
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
 #define MAX_LOCKS 100
-#define MAX_CHUNKS 100
+#define MAX_CHUNKS 1000
 #define MAX_STR 100
 
 umbra_map_t *umbra_map;
@@ -37,7 +37,7 @@ typedef struct
 
 typedef struct
 {
-    void* addr;
+    app_pc addr;
     size_t size;
 } malloc_chunk_t;
 
@@ -77,7 +77,7 @@ static void
 show_linenum(void* wrapcxt, const char* funcname);
 
 static bool
-in_malloc_chunk(void* addr)
+in_malloc_chunk(app_pc addr)
 {
     dr_mutex_lock(malloc_table_lock);
     int i;
@@ -85,11 +85,36 @@ in_malloc_chunk(void* addr)
     {
         malloc_chunk_t chunk = malloc_table[i];
         if (addr >= chunk.addr && addr < chunk.addr + chunk.size)
+        {
             dr_mutex_unlock(malloc_table_lock);
+            dr_printf("in malloc chunk at %p, size %d\n", chunk.addr, chunk.size);
             return true;
+        }
     }
     dr_mutex_unlock(malloc_table_lock);
     return false;
+}
+
+bool
+in_main_module(app_pc addr)
+{
+    //return true;
+    module_data_t* main_module = dr_get_main_module();
+
+    return dr_module_contains_addr(main_module, addr);
+}
+
+void
+print_malloc_chunks(void)
+{
+    dr_mutex_lock(malloc_table_lock);
+    int i;
+    for (i=0; i<num_malloc_chunk; i++)
+    {
+        malloc_chunk_t chunk = malloc_table[i];
+        dr_printf("[+] malloc chunk #%d at %p, size %d\n", i, chunk.addr, chunk.size);
+    }
+    dr_mutex_unlock(malloc_table_lock);
 }
 
 /* Table mapping function names to functions. Those
@@ -125,8 +150,8 @@ findfunc(const char *name)
 static void
 thread_func_pre(void *wrapcxt, void **user_data)
 {
-    dr_printf("thread_func_pre\n");
-    pthread_mutex_lock(&run_lock);
+    //dr_printf("thread_func_pre\n");
+    //pthread_mutex_lock(&run_lock);
     return;
 }
 
@@ -208,8 +233,8 @@ malloc_post_event(void *wrapcxt, void *user_data)
 {
     thread_info_t* thread_info = get_thread_info(wrapcxt);
 
-    /* not in "main" */
-    if (thread_info->tid != 0)
+    /* if not in "main" or not in main executable return */
+    if (thread_info->tid != 0 || !in_main_module(drwrap_get_retaddr(wrapcxt)-sizeof(void*)))
         return;
 
     app_pc retval = drwrap_get_retval(wrapcxt);
@@ -221,6 +246,13 @@ malloc_post_event(void *wrapcxt, void *user_data)
 
     malloc_table[idx].addr = retval;
     malloc_table[idx].size = (size_t)user_data;
+
+    /* create shadow memory */
+    if (umbra_create_shadow_memory(umbra_map, 0 /*options*/, retval, (size_t)user_data,
+                                   0 /* default value */, 1 /*value size*/) != DRMF_SUCCESS)
+    {
+        dr_printf("[!] shadow memory create error for memory %p\n", retval);
+    }
 
     dr_printf("Malloc : addr = %p size = %d\n", retval, (size_t)user_data);
 }
@@ -261,6 +293,7 @@ get_thread_info(void* wrapcxt)
 static void
 show_linenum(void* wrapcxt, const char* funcname)
 {
+    return;
     /* Need to substract to find the call address */
     app_pc addr = drwrap_get_retaddr(wrapcxt)-sizeof(void*);
     module_data_t* modinfo = dr_lookup_module(addr);
