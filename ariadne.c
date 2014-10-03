@@ -157,12 +157,48 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
     return DR_EMIT_DEFAULT;
 }
 
+/* We use 1 byte per 4 bytes of memory, indicating the thread of the last
+ * access to memory.
+ */
+#define SHADOW_GRANULARITY 4
+#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_DOWN_2X
+
+#define SHADOW_DEFAULT_VALUE      0
+#define SHADOW_DEFAULT_VALUE_SIZE 1
+
+
+static void
+shadow_memory_init(void)
+{
+    umbra_map_options_t umbra_map_ops;
+
+    memset(&umbra_map_ops, 0, sizeof(umbra_map_ops));
+    umbra_map_ops.struct_size = sizeof(umbra_map_ops);
+    umbra_map_ops.flags =
+        UMBRA_MAP_CREATE_SHADOW_ON_TOUCH |
+        UMBRA_MAP_SHADOW_SHARED_READONLY;
+    umbra_map_ops.scale = SHADOW_MAP_SCALE;
+    umbra_map_ops.default_value = SHADOW_DEFAULT_VALUE;
+    umbra_map_ops.default_value_size = SHADOW_DEFAULT_VALUE_SIZE;
+
+    if (umbra_create_mapping(&umbra_map_ops, &umbra_map) != DRMF_SUCCESS)
+        dr_printf("[!] fail to create shadow memory mapping");
+}
+
+void
+shadow_memory_destroy(void)
+{
+    if (umbra_destroy_mapping(umbra_map) != DRMF_SUCCESS)
+        dr_printf("[!] fail to destroy shadow memory");
+}
+
 static void
 event_exit(void)
 {
     drwrap_exit();
     drmgr_exit();
     drsym_exit();
+    shadow_memory_destroy();
     dr_mutex_destroy(num_threads_lock);
     dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
@@ -185,6 +221,8 @@ dr_init(client_id_t id)
     drmgr_register_bb_instrumentation_event(NULL, event_bb_insert, NULL);
 
     dr_register_exit_event(event_exit);
+
+    shadow_memory_init();
 
     num_threads_lock = dr_mutex_create();
     malloc_table_lock = dr_mutex_create();

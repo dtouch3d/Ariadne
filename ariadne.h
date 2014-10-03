@@ -5,6 +5,8 @@
 #define MAX_CHUNKS 100
 #define MAX_STR 100
 
+umbra_map_t *umbra_map;
+
 static char* const modtable[] =
 {
     "libpthread",
