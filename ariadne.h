@@ -210,6 +210,11 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     thread_info->lock[thread_info->num_locks].alive = 1;
     thread_info->num_locks++;
 
+    if (thread_info->num_locks >= MAX_LOCKS)
+    {
+        dr_printf("[!!] max thread locks exceeded\n");
+    }
+
     show_linenum(wrapcxt, __func__);
     return;
 }

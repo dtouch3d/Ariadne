@@ -50,39 +50,39 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
  * access to memory and the set of locks held during mem ref as bitmask to the
  * thread's lock array.
  */
-#define SHADOW_GRANULARITY 4
+#define SHADOW_GRANULARITY 1
 #define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_UP_2X
 
 #define SHADOW_DEFAULT_VALUE      19
 #define SHADOW_DEFAULT_VALUE_SIZE 1
 
-uint
+byte*
 shadow_get_byte(app_pc addr)
 {
-    byte val;
+    byte* val = dr_global_alloc(2);
     size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = sizeof(val);
-    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, &val);
+    size_t shdw_size = 2;
+    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
 
-    if (res != DRMF_SUCCESS || shdw_size != sizeof(val))
+    if (res != DRMF_SUCCESS || shdw_size != 2)
     {
         dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
     }
-    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, sizeof(val));
+    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
     return val;
 }
 
 void
-shadow_set_byte(app_pc addr, byte val)
+shadow_set_byte(app_pc addr, byte* val)
 {
     size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = sizeof(val);
-    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, &val);
-    if (res != DRMF_SUCCESS || shdw_size != sizeof(val))
+    size_t shdw_size = 2;
+    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
+    if (res != DRMF_SUCCESS || shdw_size != 2)
     {
         dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
     }
-    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, sizeof(val));
+    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
 }
 
 static void
@@ -162,9 +162,14 @@ opnd_calc_address(void* drcontext, opnd_t opnd)
     return opnd_compute_address(opnd, &mcontext);
 }
 
-void* clean_call()
+void*
+clean_call(app_pc addr)
 {
-    dr_printf("[+] in instrumented memory!\n");
+    byte bytes_to_set[2] = {4, 8};
+    shadow_set_byte(addr, bytes_to_set);
+    byte* b = shadow_get_byte(addr);
+    dr_printf("[+] in instrumented memory @ %p\n", addr);
+    dr_printf("[+]      shadow mem: %d, %d\n", b[0], b[1]);
     return NULL;
 }
 
@@ -188,7 +193,8 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_read = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_read))
                 {
-                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 0);
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1,
+                            OPND_CREATE_INTPTR(addr_read));
                 }
             }
         }
@@ -201,10 +207,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_write = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_write))
                 {
-                    if(in_malloc_chunk(addr_write))
-                    {
-                        dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 0);
-                    }
+                        /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1, addr_write);*/
                 }
             }
         }
