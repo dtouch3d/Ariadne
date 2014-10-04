@@ -87,15 +87,20 @@ shadow_set_byte(app_pc addr, byte val)
 static void
 event_thread_init(void* drcontext)
 {
-    thread_info_t* thread_info = dr_thread_alloc(drcontext, sizeof(thread_info_t));
-    /*thread_info->lock = dr_thread_alloc(drcontext, sizeof(void*)*MAX_LOCKS);*/
+    thread_info_t* thread_info = dr_global_alloc(sizeof(thread_info_t));
 
-    drmgr_set_tls_field(drcontext, tls_index, thread_info);
+    drvector_append(thread_info_vec, thread_info);
+
+    unsigned int* tid = dr_thread_alloc(drcontext, sizeof(unsigned int));
 
     dr_mutex_lock(num_threads_lock);
     thread_info->tid = num_threads;
     num_threads++;
     dr_mutex_unlock(num_threads_lock);
+
+    *tid = thread_info->tid;
+
+    drmgr_set_tls_field(drcontext, tls_index, tid);
 
     thread_info->sbag = dr_global_alloc(sizeof(drvector_t));
     thread_info->pbag = dr_global_alloc(sizeof(drvector_t));
@@ -103,13 +108,14 @@ event_thread_init(void* drcontext)
     drvector_init(thread_info->sbag, 16, true /*synch*/, NULL);
     drvector_init(thread_info->pbag, 16, true /*synch*/, NULL);
 
-    drvector_append(thread_info->sbag, (void*)thread_info->tid);
-
-    if (thread_info->tid == 0)
+    if (tid == 0)
     {
         main_sbag = thread_info->sbag;
         main_pbag = thread_info->pbag;
     }
+
+    dr_printf("thread #%d init\n", *tid);
+    drvector_append(thread_info->sbag, *tid);
 
     thread_info->num_locks = 0;
 }
@@ -117,9 +123,11 @@ event_thread_init(void* drcontext)
 static void
 event_thread_exit(void* drcontext)
 {
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
-    dr_printf("Total locks held from thread #%d : %d\n", thread_info->tid, thread_info->num_locks);
-    int tid = thread_info->tid;
+    thread_info_t* thread_info = get_thread_info_helper(drcontext, true);
+
+    unsigned int tid = thread_info->tid;
+
+    dr_printf("Total locks held from thread #%d : %d\n", tid, thread_info->num_locks);
 
     int i;
     drvector_t* sbag = thread_info->sbag;
@@ -131,6 +139,7 @@ event_thread_exit(void* drcontext)
          * For now we assume no nested parallelism */
         for(i=0; i<sbag->entries; i++)
         {
+            dr_printf("appending %d\n", i);
             drvector_append(main_pbag, drvector_get_entry(sbag, i));
         }
 
@@ -142,12 +151,6 @@ event_thread_exit(void* drcontext)
         dr_printf("[+] pbag:");
         print_bag(pbag);
     }
-
-    /* XXX: Hic sunt minor dracones */
-    /*drvector_delete(thread_info->sbag);*/
-    /*drvector_delete(thread_info->pbag);*/
-
-    dr_thread_free(drcontext, thread_info, sizeof(thread_info_t));
 }
 
 app_pc
@@ -245,6 +248,10 @@ event_exit(void)
     dr_mutex_destroy(num_threads_lock);
     dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
+
+    /* TODO: Free properly */
+    dr_global_free(thread_info_vec, sizeof(drvector_t));
+
     if (umbra_exit() != DRMF_SUCCESS)
         dr_printf("[!] Umbra exit error!\n");
 }
@@ -273,7 +280,8 @@ dr_init(client_id_t id)
 
     tls_index = drmgr_register_tls_field();
 
-    drvector_init(thread_info_vector, 16, true /* synch */, NULL);
+    thread_info_vec = dr_global_alloc(sizeof(drvector_t));
+    drvector_init(thread_info_vec, 16, true /* synch */, NULL);
 
     memset(malloc_table, 0, MAX_CHUNKS*sizeof(malloc_chunk_t));
 }

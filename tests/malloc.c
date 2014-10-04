@@ -18,7 +18,7 @@ void *PrintHello(void *threadid)
 
    printf("Hello World! It's me, thread #%ld!\n", tid);
 
-   /*pthread_exit(NULL);*/
+   pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[])

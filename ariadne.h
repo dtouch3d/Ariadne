@@ -4,7 +4,7 @@
 
 /* XXX: For now a maximum of 8 locks, the size of bits in the shadow lock set memory
  * A bit is set if the corresponding lock was held during the memory access */
-#define MAX_LOCKS 8
+#define MAX_LOCKS 15
 #define MAX_CHUNKS 1000
 #define MAX_STR 100
 
@@ -25,12 +25,12 @@ static int tls_index;
 typedef struct
 {
     void* addr;
-    bool held;
+    bool alive;
 } lock_info_t;
 
 typedef struct
 {
-    uintptr_t tid;
+    unsigned int tid;
     lock_info_t lock[MAX_LOCKS];
     size_t num_locks;
     drvector_t* sbag;
@@ -55,7 +55,7 @@ drvector_t* main_sbag;
 drvector_t* main_pbag;
 
 /* Holds a thread_info struct of each thread */
-drvector_t* thread_info_vector;
+drvector_t* thread_info_vec;
 
 static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
@@ -185,7 +185,7 @@ static void
 pthread_exit_event(void *wrapcxt, void **user_data)
 {
     /* pthread_exit wrap here */
-    //show_linenum(wrapcxt, __func__);
+    show_linenum(wrapcxt, __func__);
 
     thread_info_t* thread_info = get_thread_info(wrapcxt);
 
@@ -209,7 +209,8 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     if (thread_info->tid == 0)
         return;
 
-    thread_info->lock[thread_info->num_locks] = lock;
+    thread_info->lock[thread_info->num_locks].addr = lock;
+    thread_info->lock[thread_info->num_locks].alive = 1;
     thread_info->num_locks++;
 
     show_linenum(wrapcxt, __func__);
@@ -285,20 +286,32 @@ pthread_join_event(void *wrapcxt, void **user_data)
         drvector_append(sbag, data);
     }
 
-    //drvector_delete(pbag);
-    //drvector_init(pbag, 16, true [>synch<], NULL);
-
     pbag->entries = 0;
 
     return;
 }
 
 static thread_info_t*
+get_thread_info_helper(void* wrapcxt, bool is_drcontext)
+{
+    void* context;
+    if (!is_drcontext)
+    {
+        context = drwrap_get_drcontext(wrapcxt);
+    } else
+    {
+        context = wrapcxt;
+    }
+
+
+    unsigned int* tid = drmgr_get_tls_field(context, tls_index);
+    return drvector_get_entry(thread_info_vec, *tid);
+}
+
+thread_info_t*
 get_thread_info(void* wrapcxt)
 {
-    void* drcontext = drwrap_get_drcontext(wrapcxt);
-    thread_info_t* thread_info = (thread_info_t*)drmgr_get_tls_field(drcontext, tls_index);
-    return thread_info;
+    return get_thread_info_helper(wrapcxt, false);
 }
 
 /* funcname is evaluated at compile time with __func__ macro by the caller */
@@ -340,9 +353,10 @@ static void
 print_bag(drvector_t* bag)
 {
     int i;
+    dr_printf("entries: %d\n", bag->entries);
     for(i=0; i<bag->entries; i++)
     {
-        uintptr_t stid = drvector_get_entry(bag, i);
+        unsigned int stid = drvector_get_entry(bag, i);
         dr_printf("%d ", stid);
     }
     dr_printf("\n");
