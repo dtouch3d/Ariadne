@@ -273,5 +273,7 @@ dr_init(client_id_t id)
 
     tls_index = drmgr_register_tls_field();
 
+    drvector_init(thread_info_vector, 16, true /* synch */, NULL);
+
     memset(malloc_table, 0, MAX_CHUNKS*sizeof(malloc_chunk_t));
 }

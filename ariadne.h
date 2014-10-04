@@ -1,7 +1,10 @@
 #include "drvector.h"
 
 #define SIZE(A) sizeof(A)/sizeof(A[0])
-#define MAX_LOCKS 100
+
+/* XXX: For now a maximum of 8 locks, the size of bits in the shadow lock set memory
+ * A bit is set if the corresponding lock was held during the memory access */
+#define MAX_LOCKS 8
 #define MAX_CHUNKS 1000
 #define MAX_STR 100
 
@@ -44,6 +47,9 @@ typedef struct
 
 drvector_t* main_sbag;
 drvector_t* main_pbag;
+
+/* Holds a thread_info struct of each thread */
+drvector_t* thread_info_vector;
 
 static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
@@ -180,7 +186,7 @@ pthread_exit_event(void *wrapcxt, void **user_data)
     if (thread_info->tid > 0)
     {
         dr_printf("thread #%d exiting\n", thread_info->tid);
-        pthread_mutex_unlock(&run_lock);
+        drwrap_skip_call(wrapcxt, NULL, 1);
     }
     return;
 }

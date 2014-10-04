@@ -14,12 +14,11 @@ void *PrintHello(void *threadid)
    long tid;
    tid = (long)threadid;
 
-
    array[tid] = tid;
 
    printf("Hello World! It's me, thread #%ld!\n", tid);
 
-   pthread_exit(NULL);
+   /*pthread_exit(NULL);*/
 }
 
 int main(int argc, char *argv[])

@@ -10,7 +10,7 @@ void *PrintHello(void *threadid)
    long tid;
    tid = (long)threadid;
    printf("Hello from thread #%lu\n", tid);
-   pthread_exit(NULL);
+   /*pthread_exit(NULL);*/
 }
 
 int main(int argc, char *argv[])
