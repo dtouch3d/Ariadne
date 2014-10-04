@@ -4,11 +4,11 @@
 
 /* XXX: For now a maximum of 8 locks, the size of bits in the shadow lock set memory
  * A bit is set if the corresponding lock was held during the memory access */
-#define MAX_LOCKS 15
+#define MAX_LOCKS 8
 #define MAX_CHUNKS 1000
 #define MAX_STR 100
 
-umbra_map_t *umbra_map;
+static umbra_map_t* umbra_map;
 
 static char* const modtable[] =
 {

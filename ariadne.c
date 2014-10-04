@@ -46,11 +46,12 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
     }
 }
 
-/* We use 1 byte per 4 bytes of memory, indicating the thread of the last
- * access to memory.
+/* We use 2 byte per 1 bytes of memory, indicating the thread of the last
+ * access to memory and the set of locks held during mem ref as bitmask to the
+ * thread's lock array.
  */
 #define SHADOW_GRANULARITY 4
-#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_DOWN_4X
+#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_UP_2X
 
 #define SHADOW_DEFAULT_VALUE      19
 #define SHADOW_DEFAULT_VALUE_SIZE 1
@@ -241,6 +242,7 @@ event_exit(void)
     drmgr_exit();
     drsym_exit();
     shadow_memory_destroy();
+
     dr_mutex_destroy(num_threads_lock);
     dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
