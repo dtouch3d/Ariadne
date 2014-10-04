@@ -108,14 +108,7 @@ event_thread_init(void* drcontext)
     drvector_init(thread_info->sbag, 16, true /*synch*/, NULL);
     drvector_init(thread_info->pbag, 16, true /*synch*/, NULL);
 
-    if (tid == 0)
-    {
-        main_sbag = thread_info->sbag;
-        main_pbag = thread_info->pbag;
-    }
-
-    dr_printf("thread #%d init\n", *tid);
-    drvector_append(thread_info->sbag, *tid);
+    drvector_append(thread_info->sbag, (void*)*tid);
 
     thread_info->num_locks = 0;
 }
@@ -137,10 +130,13 @@ event_thread_exit(void* drcontext)
     {
         /* Here we join the sbag of spawned thread with it's parent's pbag.
          * For now we assume no nested parallelism */
+        /*dr_printf("entries: %d\n", sbag->entries);*/
         for(i=0; i<sbag->entries; i++)
         {
-            dr_printf("appending %d\n", i);
-            drvector_append(main_pbag, drvector_get_entry(sbag, i));
+            /*dr_printf("appending %d\n", i);*/
+            thread_info_t* main_info = drvector_get_entry(thread_info_vec, 0);
+            /*dr_printf("main thread bags #%p  and %p\n", main_info->sbag, main_info->pbag);*/
+            drvector_append(main_info->pbag, drvector_get_entry(sbag, i));
         }
 
     } else /* main thread */
@@ -250,7 +246,7 @@ event_exit(void)
     dr_mutex_destroy(runlock);
 
     /* TODO: Free properly */
-    dr_global_free(thread_info_vec, sizeof(drvector_t));
+    /*dr_global_free(thread_info_vec, sizeof(drvector_t));*/
 
     if (umbra_exit() != DRMF_SUCCESS)
         dr_printf("[!] Umbra exit error!\n");

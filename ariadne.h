@@ -51,9 +51,6 @@ typedef struct
 } malloc_chunk_t;
 
 
-drvector_t* main_sbag;
-drvector_t* main_pbag;
-
 /* Holds a thread_info struct of each thread */
 drvector_t* thread_info_vec;
 
