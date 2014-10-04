@@ -24,6 +24,12 @@ static int tls_index;
 
 typedef struct
 {
+    void* addr;
+    bool held;
+} lock_info;
+
+typedef struct
+{
     uintptr_t tid;
     void* lock[MAX_LOCKS];
     size_t num_locks;
