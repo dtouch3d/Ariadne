@@ -222,6 +222,20 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 static void
 pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 {
+    void* lock = drwrap_get_arg(wrapcxt, 0);
+
+    thread_info_t* thread_info = get_thread_info(wrapcxt);
+
+    int i;
+    for (i=0; i<thread_info->num_locks; i++)
+    {
+        if (thread_info->lock[i].addr == lock)
+        {
+            dr_printf("[+] killed lock @ %p\n", lock);
+            thread_info->lock[i].alive = 0;
+        }
+    }
+
     /* pthread_mutex_unlock wrap here */
     show_linenum(wrapcxt, __func__);
     return;

@@ -14,7 +14,11 @@ void *PrintHello(void *threadid)
    long tid;
    tid = (long)threadid;
 
+   pthread_mutex_lock(&run_lock);
+
    array[tid] = tid;
+
+   pthread_mutex_unlock(&run_lock);
 
    printf("Hello World! It's me, thread #%ld!\n", tid);
 
