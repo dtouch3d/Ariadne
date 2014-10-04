@@ -26,12 +26,12 @@ typedef struct
 {
     void* addr;
     bool held;
-} lock_info;
+} lock_info_t;
 
 typedef struct
 {
     uintptr_t tid;
-    void* lock[MAX_LOCKS];
+    lock_info_t lock[MAX_LOCKS];
     size_t num_locks;
     drvector_t* sbag;
     drvector_t* pbag;
