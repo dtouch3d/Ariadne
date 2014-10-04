@@ -162,6 +162,12 @@ opnd_calc_address(void* drcontext, opnd_t opnd)
     return opnd_compute_address(opnd, &mcontext);
 }
 
+void* clean_call()
+{
+    dr_printf("[+] in instrumented memory!\n");
+    return NULL;
+}
+
 /* Called for every instr on bb */
 /* TODO: check if in main module */
 static dr_emit_flags_t
@@ -182,14 +188,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_read = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_read))
                 {
-                    /*instrument_mem(drcontext, bb, instr, i, false);*/
-                    dr_printf("[+] global memory read!\n");
-
-                    shadow_set_byte(addr_read, 17);
-                    uint accessor = shadow_get_byte(addr_read);
-                    dr_printf("last accessor of %p : %d\n", addr_read, accessor);
-                    dr_printf("thread id #%d\n", dr_get_thread_id(drcontext));
-
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 0);
                 }
             }
         }
@@ -202,12 +201,10 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_write = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_write))
                 {
-                    /*instrument_mem(drcontext, bb, instr, i, false);*/
-                    dr_printf("[+] global memory write!\n");
-
-                    uint accessor = shadow_get_byte(addr_write);
-                    dr_printf("last accessor of %p : %d\n", addr_write, accessor);
-                    dr_printf("thread id #%d\n", dr_get_thread_id(drcontext));
+                    if(in_malloc_chunk(addr_write))
+                    {
+                        dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 0);
+                    }
                 }
             }
         }
