@@ -25,6 +25,7 @@ static int tls_index;
 typedef struct
 {
     void* addr;
+    byte nonlocker;
     bool alive;
 } lock_info_t;
 

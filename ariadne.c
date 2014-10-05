@@ -11,20 +11,75 @@
 void* runlock;
 static int running_thread = 0;
 
+bool
+in_drvector(drvector_t *vec, void* elem)
+{
+    int i;
+    for (i=0; i<vec->entries; i++)
+    {
+        if (drvector_get_entry(vec, i) == elem)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* We use 2 byte per 1 bytes of memory, indicating the thread of the last
+ * access to memory and the set of locks held during mem ref as bitmask to the
+ * thread's lock array.
+ */
+#define SHADOW_GRANULARITY 1
+#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_UP_2X
+
+#define SHADOW_DEFAULT_VALUE      19
+#define SHADOW_DEFAULT_VALUE_SIZE 1
+
+
+void
+shadow_get_byte(app_pc addr, byte* shadow_bytes)
+{
+    /*byte* val = dr_global_alloc(2);*/
+    size_t app_size = SHADOW_GRANULARITY;
+    size_t shdw_size = 2;
+    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, shadow_bytes);
+
+    if (res != DRMF_SUCCESS || shdw_size != 2)
+    {
+        dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
+    }
+    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
+    /*return val;*/
+}
+
+void
+shadow_set_byte(app_pc addr, byte* val)
+{
+    size_t app_size = SHADOW_GRANULARITY;
+    size_t shdw_size = 2;
+    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
+    if (res != DRMF_SUCCESS || shdw_size != 2)
+    {
+        dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
+    }
+    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
+}
+
+
 static void
 brelly(unsigned int thread, app_pc addr)
 {
     byte shadow_bytes[2];
-    shadow_get_bytes(addr, shadow_bytes);
+    shadow_get_byte(addr, shadow_bytes);
 
     unsigned int accessor = (unsigned int)shadow_bytes[0];
     byte lockset = shadow_bytes[1];
 
     thread_info_t* main_info = drvector_get_entry(thread_info_vec, 0);
-    thread_info_t* accessor_info = drvector_get_entry(thread_info_vec, i);
+    thread_info_t* accessor_info = drvector_get_entry(thread_info_vec, accessor);
     thread_info_t* thread_info = drvector_get_entry(thread_info_vec, thread);
 
-    int i;
+    int i, j;
     for (i=0; i<main_info->sbag->entries; i++)
     {
         /* serial thread in sbag */
@@ -33,12 +88,91 @@ brelly(unsigned int thread, app_pc addr)
         {
             /* serial access */
             /* ... */
+
+
+            lockset = thread_info->lockset;
+
+            if (0 /*what*/)
+            {
+            }
+
+            for (j=0; j<MAX_LOCKS; j++)
+            {
+                if (lockset & (1 << j))
+                {
+                    lock[j].alive = 1;
+                }
+            }
+
+            accessor = thread;
+
+            shadow_bytes[0] = accessor;
+            shadow_bytes[1] = lockset;
+
+            shadow_set_byte(addr, shadow_bytes);
             return;
         }
     }
 
-    /* parallel access */
+     /* parallel access */
     /* ... */
+
+    for (j=0; j<MAX_LOCKS; j++)
+    {
+        /* if lock belongs to shadow lockset but not in thread's lockset */
+        if ((lockset & (1 << j)) && !(thread_info->lockset & (1 << j)))
+        {
+            if (lock[j].alive)
+            {
+                lock[j].alive = 0;
+                lock[j].nonlocker = thread;
+            }
+        }
+    }
+
+    for (j=0; j<MAX_LOCKS; j++)
+    {
+        /* if lock belongs to shadow lockset AND in thread's lockset */
+        if ((lockset & (1 << j)) && (thread_info->lockset & (1 << j)))
+        {
+            if (lock[j].alive && in_drvector(main_info->sbag, lock[j].nonlocker))
+            {
+                lock[j].alive = 0;
+            }
+        }
+    }
+
+    bool all_dead = true;
+
+    for (j=0; j<MAX_LOCKS; j++)
+    {
+        /* if lock belongs to shadow lockset AND in thread's lockset */
+        if ((lockset & (1 << j)))
+        {
+            if (lock[j].alive)
+            {
+                all_dead = false;
+                break;
+            }
+        }
+    }
+
+
+    if (lockset == 0 || all_dead)
+    {
+        /* report race */
+
+        for (j=0; j<MAX_LOCKS; j++)
+        {
+            /* if lock belongs to shadow lockset AND in thread's lockset */
+            if ((lockset & (1 << j)) && (thread_info->lockset & (1 << j)))
+            {
+                dr_printf("[!] Race error! Thread #%d accesses %p without lock #%d at %p\n",
+                        lock[j].nonlocker, addr, j, lock[j].addr);
+            }
+        }
+    }
+
 }
 
 static void
@@ -74,45 +208,6 @@ event_module_load(void *drcontext, const module_data_t *info, bool loaded)
             }
         }
     }
-}
-
-/* We use 2 byte per 1 bytes of memory, indicating the thread of the last
- * access to memory and the set of locks held during mem ref as bitmask to the
- * thread's lock array.
- */
-#define SHADOW_GRANULARITY 1
-#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_UP_2X
-
-#define SHADOW_DEFAULT_VALUE      19
-#define SHADOW_DEFAULT_VALUE_SIZE 1
-
-byte*
-shadow_get_byte(app_pc addr)
-{
-    byte* val = dr_global_alloc(2);
-    size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = 2;
-    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
-
-    if (res != DRMF_SUCCESS || shdw_size != 2)
-    {
-        dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
-    }
-    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
-    return val;
-}
-
-void
-shadow_set_byte(app_pc addr, byte* val)
-{
-    size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = 2;
-    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
-    if (res != DRMF_SUCCESS || shdw_size != 2)
-    {
-        dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
-    }
-    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
 }
 
 static void
@@ -194,13 +289,15 @@ opnd_calc_address(void* drcontext, opnd_t opnd)
 }
 
 void*
-clean_call(app_pc addr)
+clean_call(void* drcontext, app_pc addr)
 {
-    byte bytes_to_set[2] = {4, 8};
-    shadow_set_byte(addr, bytes_to_set);
-    byte* b = shadow_get_byte(addr);
+    byte b[2];
+    shadow_get_byte(addr, b);
     dr_printf("[+] in instrumented memory @ %p\n", addr);
     dr_printf("[+]      shadow mem: %d, %d\n", b[0], b[1]);
+
+    thread_info_t* thread_info = get_thread_info_helper(drcontext, true);
+    brelly((byte)thread_info->tid, addr);
     return NULL;
 }
 
@@ -224,8 +321,8 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_read = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_read))
                 {
-                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1,
-                            OPND_CREATE_INTPTR(addr_read));
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
+                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_read));
                 }
             }
         }
