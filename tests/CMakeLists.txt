@@ -23,3 +23,6 @@ add_test_ariadne(malloc malloc.c)
 
 add_executable(join join.c)
 add_test_ariadne(join join.c)
+
+add_executable(race1 race1.c)
+add_test_ariadne(race1 race1.c)

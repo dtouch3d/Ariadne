@@ -226,7 +226,7 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
         if (lock[i].addr == lock_arg)
         {
             dr_printf("[+] thread # %d lock exists @ %p\n", thread_info->tid, lock_arg);
-            lock[i].alive = 1;
+            //lock[i].alive = 1;
 
             thread_info->lockset |= 1 << i;
             thread_info->num_locks_held++;
@@ -238,7 +238,7 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     }
 
     lock[num_locks].addr = lock_arg;
-    lock[num_locks].alive = 1;
+    //lock[num_locks].alive = 1;
 
     num_locks++;
 
@@ -274,7 +274,7 @@ pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
         if (lock[i].addr == lock_arg)
         {
             dr_printf("[+] thread #%d killed lock @ %p\n", thread_info->tid, lock_arg);
-            lock[i].alive = 0;
+            //lock[i].alive = 0;
 
             thread_info->lockset &= (0 << i);
 

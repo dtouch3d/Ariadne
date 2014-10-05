@@ -69,6 +69,8 @@ shadow_set_byte(app_pc addr, byte* val)
 static void
 brelly(unsigned int thread, app_pc addr)
 {
+    dr_mutex_lock(runlock);
+
     byte shadow_bytes[2];
     shadow_get_byte(addr, shadow_bytes);
 
@@ -78,6 +80,10 @@ brelly(unsigned int thread, app_pc addr)
     thread_info_t* main_info = drvector_get_entry(thread_info_vec, 0);
     thread_info_t* accessor_info = drvector_get_entry(thread_info_vec, accessor);
     thread_info_t* thread_info = drvector_get_entry(thread_info_vec, thread);
+
+    dr_printf("addr: %p\n", addr);
+    dr_printf("accessor: %d w/ lockset %d\n", accessor_info->tid, lockset);
+    dr_printf("current thread: %d w/ lockset %d\n", thread_info->tid, thread_info->lockset);
 
     int i, j;
     for (i=0; i<main_info->sbag->entries; i++)
@@ -110,6 +116,7 @@ brelly(unsigned int thread, app_pc addr)
             shadow_bytes[1] = lockset;
 
             shadow_set_byte(addr, shadow_bytes);
+            dr_mutex_unlock(runlock);
             return;
         }
     }
@@ -173,6 +180,7 @@ brelly(unsigned int thread, app_pc addr)
         }
     }
 
+    dr_mutex_unlock(runlock);
 }
 
 static void
@@ -321,8 +329,11 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_read = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_read))
                 {
-                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
-                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_read));
+                    dr_printf("bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
+                    /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,*/
+                            /*OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_read));*/
+                    clean_call(drcontext, addr_read);
                 }
             }
         }
@@ -335,7 +346,12 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_write = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_write))
                 {
-                        /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1, addr_write);*/
+                    dr_printf("bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
+                    /*dr_insert_read_tls_field(drcontext, bb, instr, REG_XBX);*/
+                    /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,*/
+                            /*OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_write));*/
+                    clean_call(drcontext, addr_write);
                 }
             }
         }
