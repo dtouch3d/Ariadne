@@ -350,7 +350,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 if(in_malloc_chunk(addr))
                 {
 
-                    /* XXX: -thred_private alternative, but does not seem to work
+                    /* XXX: -thred_private alternative
                      * Spill a register to get a pointer to our TLS structure.
                      * dr_save_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
                      * dr_insert_read_tls_field(drcontext, bb, instr, DR_REG_XDI);
@@ -414,8 +414,7 @@ event_exit(void)
     dr_mutex_destroy(runlock);
     dr_mutex_destroy(lock_mutex);
 
-    /* TODO: Free properly */
-    /*dr_global_free(thread_info_vec, sizeof(drvector_t));*/
+    dr_global_free(thread_info_vec, sizeof(drvector_t));
 
     if (umbra_exit() != DRMF_SUCCESS)
         dr_printf("[!] Umbra exit error!\n");
