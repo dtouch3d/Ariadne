@@ -3,9 +3,12 @@
 #include "drsyms.h"
 #include "drmgr.h"
 #include "umbra.h"
+#include "drutil.h"
+
 #include <string.h>
 #include <stdint.h>
 
+#include <stddef.h>
 #include "ariadne.h"
 
 void* runlock;
@@ -330,6 +333,7 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 if(in_malloc_chunk(addr_read))
                 {
                     dr_printf("bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("dr_using_private_caches: %d", dr_using_all_private_caches());
                     dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
                     /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,*/
                             /*OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_read));*/
@@ -346,12 +350,22 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr_write = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr_write))
                 {
+
+                    /* Spill a register to get a pointer to our TLS structure. */
+                    dr_save_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
+                    dr_insert_read_tls_field(drcontext, bb, instr, DR_REG_XDI);
+
                     dr_printf("bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("dr_using_private_caches: %d", dr_using_all_private_caches());
                     dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
                     /*dr_insert_read_tls_field(drcontext, bb, instr, REG_XBX);*/
-                    /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,*/
-                            /*OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_write));*/
-                    clean_call(drcontext, addr_write);
+
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
+                            OPND_CREATE_REG(DR_REG_XDI, 0), OPND_CREATE_INTPTR(addr_write));
+                    /*clean_call(drcontext, addr_write);*/
+
+                    dr_restore_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
+
                 }
             }
         }
