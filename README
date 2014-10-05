@@ -6,7 +6,7 @@ A thread error detector built on top of DynamoRIO.
 How to build
 ------------
 
-mkdir build
+mkdir build && cd build
 
 cmake ../
 
