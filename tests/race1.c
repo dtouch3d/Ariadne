@@ -3,13 +3,26 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define NUM_THREADS	5
+#define NUM_THREADS 2
 
 pthread_mutex_t run_lock;
 
 int* array;
 
-void *PrintHello(void *threadid)
+void *func1(void *threadid)
+{
+   long tid;
+   tid = (long)threadid;
+
+   array[0] = tid;
+
+   printf("Hello World! It's me, thread #%ld!\n", tid);
+
+   /*pthread_exit(NULL);*/
+}
+
+
+void *func2(void *threadid)
 {
    long tid;
    tid = (long)threadid;
@@ -23,20 +36,14 @@ void *PrintHello(void *threadid)
 
 int main(int argc, char *argv[])
 {
-   pthread_mutex_init(&run_lock, NULL);
    pthread_t threads[NUM_THREADS];
    int rc;
    long t;
 
    array = malloc(sizeof(int));
 
-   for(t=0;t<NUM_THREADS;t++){
-       rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
-       if (rc){
-           printf("ERROR; return code from pthread_create() is %d\n", rc);
-           exit(-1);
-       }
-   }
+   rc = pthread_create(&threads[0], NULL, func1, (void *)1);
+   rc = pthread_create(&threads[1], NULL, func2, (void *)2);
 
    sleep(2);
 

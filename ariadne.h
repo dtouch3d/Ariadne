@@ -105,7 +105,7 @@ in_malloc_chunk(app_pc addr)
         if (addr >= chunk.addr && addr < chunk.addr + chunk.size)
         {
             dr_mutex_unlock(malloc_table_lock);
-            dr_printf("in malloc chunk at %p, size %d\n", chunk.addr, chunk.size);
+            dr_printf("[+] in malloc chunk at %p, size %d\n", chunk.addr, chunk.size);
             return true;
         }
     }
@@ -195,9 +195,12 @@ pthread_exit_event(void *wrapcxt, void **user_data)
 
     thread_info_t* thread_info = get_thread_info(wrapcxt);
 
+    /* pthread_exit crashes our program and holds 10+ locks
+     * skipping below crashes anyways
+     */
     if (thread_info->tid > 0)
     {
-        dr_printf("thread #%d exiting\n", thread_info->tid);
+        dr_printf("[+] thread #%d exiting\n", thread_info->tid);
         drwrap_skip_call(wrapcxt, NULL, 1);
     }
     return;
@@ -218,7 +221,7 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 
     dr_mutex_lock(lock_mutex);
 
-    dr_printf("num_locks: %d\n", num_locks);
+    //dr_printf("num_locks: %d\n", num_locks);
 
     int i;
     for (i=0; i<num_locks; i++)
@@ -337,7 +340,7 @@ malloc_post_event(void *wrapcxt, void *user_data)
         dr_printf("[!] shadow memory create error for memory %p\n", retval);
     }
 
-    dr_printf("Malloc : addr = %p size = %d\n", retval, (size_t)user_data);
+    dr_printf("[+] Malloc : addr = %p size = %d\n", retval, (size_t)user_data);
 }
 
 static void
@@ -388,7 +391,6 @@ get_thread_info(void* wrapcxt)
 static void
 show_linenum(void* wrapcxt, const char* funcname)
 {
-    return;
     /* Need to substract to find the call address */
     app_pc addr = drwrap_get_retaddr(wrapcxt)-sizeof(void*);
     module_data_t* modinfo = dr_lookup_module(addr);
@@ -416,18 +418,18 @@ show_linenum(void* wrapcxt, const char* funcname)
     /* Should probably check for the existence of symbols
      * and print hex address otherwise
      */
-    dr_printf("%s at %s:%d\n", funcname, sym.file, sym.line);
+    dr_printf("[+] %s at %s:%d\n", funcname, sym.file, sym.line);
 }
 
 static void
 print_bag(drvector_t* bag)
 {
     int i;
-    dr_printf("entries: %d\n", bag->entries);
+    dr_printf("[+] entries: %d, [", bag->entries);
     for(i=0; i<bag->entries; i++)
     {
         unsigned int stid = drvector_get_entry(bag, i);
         dr_printf("%d ", stid);
     }
-    dr_printf("\n");
+    dr_printf("]\n");
 }

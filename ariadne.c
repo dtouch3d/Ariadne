@@ -51,7 +51,7 @@ shadow_get_byte(app_pc addr, byte* shadow_bytes)
     {
         dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
     }
-    dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
+    /*dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);*/
     /*return val;*/
 }
 
@@ -65,7 +65,7 @@ shadow_set_byte(app_pc addr, byte* val)
     {
         dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
     }
-    dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);
+    /*dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);*/
 }
 
 
@@ -84,9 +84,9 @@ brelly(unsigned int thread, app_pc addr)
     thread_info_t* accessor_info = drvector_get_entry(thread_info_vec, accessor);
     thread_info_t* thread_info = drvector_get_entry(thread_info_vec, thread);
 
-    dr_printf("addr: %p\n", addr);
-    dr_printf("accessor: %d w/ lockset %d\n", accessor_info->tid, lockset);
-    dr_printf("current thread: %d w/ lockset %d\n", thread_info->tid, thread_info->lockset);
+    dr_printf("[+] addr: %p\n", addr);
+    dr_printf("[+] accessor: %d w/ lockset %d\n", accessor_info->tid, lockset);
+    dr_printf("[+] current thread: %d w/ lockset %d\n", thread_info->tid, thread_info->lockset);
 
     int i, j;
     for (i=0; i<main_info->sbag->entries; i++)
@@ -258,7 +258,7 @@ event_thread_exit(void* drcontext)
 
     unsigned int tid = thread_info->tid;
 
-    dr_printf("Total locks held from thread #%d : %d\n", tid, thread_info->num_locks_held);
+    dr_printf("[+] Total locks held from thread #%d : %d\n", tid, thread_info->num_locks_held);
 
     int i;
     drvector_t* sbag = thread_info->sbag;
@@ -304,8 +304,9 @@ clean_call(void* drcontext, app_pc addr)
 {
     byte b[2];
     shadow_get_byte(addr, b);
-    dr_printf("[+] in instrumented memory @ %p\n", addr);
-    dr_printf("[+]      shadow mem: %d, %d\n", b[0], b[1]);
+    /*dr_printf("clean call drcontext @ %p\n", drcontext);*/
+    /*dr_printf("[+] in instrumented memory @ %p\n", addr);*/
+    /*dr_printf("[+]      shadow mem: %d, %d\n", b[0], b[1]);*/
 
     thread_info_t* thread_info = get_thread_info_helper(drcontext, true);
     brelly((byte)thread_info->tid, addr);
@@ -328,16 +329,14 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
             opnd_t opnd = instr_get_src(instr, i);
             if (opnd_is_memory_reference(opnd))
             {
-                /*print_malloc_chunks();*/
-                app_pc addr_read = opnd_calc_address(drcontext, opnd);
-                if(in_malloc_chunk(addr_read))
+                app_pc addr = opnd_calc_address(drcontext, opnd);
+                if(in_malloc_chunk(addr))
                 {
-                    dr_printf("bb_insert: drcontext = %p\n", drcontext);
-                    dr_printf("dr_using_private_caches: %d", dr_using_all_private_caches());
-                    dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
-                    /*dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,*/
-                            /*OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr_read));*/
-                    clean_call(drcontext, addr_read);
+                    dr_printf("[+] bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("[+] dr_using_private_caches: %d\n", dr_using_all_private_caches());
+                    dr_printf("[+] thread id %d\n", dr_get_thread_id(drcontext));
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
+                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr));
                 }
             }
         }
@@ -347,24 +346,30 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
             opnd_t opnd = instr_get_dst(instr, i);
             if (opnd_is_memory_reference(opnd))
             {
-                app_pc addr_write = opnd_calc_address(drcontext, opnd);
-                if(in_malloc_chunk(addr_write))
+                app_pc addr = opnd_calc_address(drcontext, opnd);
+                if(in_malloc_chunk(addr))
                 {
 
-                    /* Spill a register to get a pointer to our TLS structure. */
-                    dr_save_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
-                    dr_insert_read_tls_field(drcontext, bb, instr, DR_REG_XDI);
+                    /* XXX: -thred_private alternative, but does not seem to work
+                     * Spill a register to get a pointer to our TLS structure.
+                     * dr_save_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
+                     * dr_insert_read_tls_field(drcontext, bb, instr, DR_REG_XDI);
+                     *  ...
+                     * dr_restore_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
+                     */
 
-                    dr_printf("bb_insert: drcontext = %p\n", drcontext);
-                    dr_printf("dr_using_private_caches: %d", dr_using_all_private_caches());
-                    dr_printf("[#] thread id %d\n", dr_get_thread_id(drcontext));
-                    /*dr_insert_read_tls_field(drcontext, bb, instr, REG_XBX);*/
+                    /* XXX: drcontext seems the same for every call
+                     * Should be different for every thread so we can take the tls storage
+                     */
+
+                    dr_printf("[+] bb_insert: drcontext = %p\n", drcontext);
+                    dr_printf("[+] dr_using_private_caches: %d", dr_using_all_private_caches());
+                    dr_printf("[+] thread id %d\n", dr_get_thread_id(drcontext));
 
                     dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
-                            OPND_CREATE_REG(DR_REG_XDI, 0), OPND_CREATE_INTPTR(addr_write));
-                    /*clean_call(drcontext, addr_write);*/
+                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr));
 
-                    dr_restore_reg(drcontext, bb, instr, DR_REG_XDI, SPILL_SLOT_2);
+
 
                 }
             }

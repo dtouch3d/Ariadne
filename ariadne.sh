@@ -5,4 +5,4 @@
 
 DR_OPS=
 
-${PROJECT_BINARY_DIR}/dynamorio/bin@ARCH@/drrun -no_shared_bbs -no_shared_traces -thread_private -native_exec_list libpthread.so -native_exec_retakeover -native_exec_opt -c @DRTHREAD_PATH@ -- $@
+${PROJECT_BINARY_DIR}/dynamorio/bin@ARCH@/drrun -thread_private -c @DRTHREAD_PATH@ -- $@
