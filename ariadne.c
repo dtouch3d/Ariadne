@@ -12,6 +12,36 @@ void* runlock;
 static int running_thread = 0;
 
 static void
+brelly(unsigned int thread, app_pc addr)
+{
+    byte shadow_bytes[2];
+    shadow_get_bytes(addr, shadow_bytes);
+
+    unsigned int accessor = (unsigned int)shadow_bytes[0];
+    byte lockset = shadow_bytes[1];
+
+    thread_info_t* main_info = drvector_get_entry(thread_info_vec, 0);
+
+    thread_info_t* thread_info = drvector_get_entry(thread_info_vec, thread);
+
+    int i;
+    for (i=0; i<main_info->sbag->entries; i++)
+    {
+        /* serial thread in sbag */
+        unsigned int sthread = drvector_get_entry(main_info->sbag, i);
+        if (accessor == sthread)
+        {
+            /* serial access */
+            /* ... */
+            return;
+        }
+    }
+
+    /* parallel access */
+    /* ... */
+}
+
+static void
 event_module_load(void *drcontext, const module_data_t *info, bool loaded)
 {
     int i,j;
