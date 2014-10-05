@@ -6,7 +6,7 @@ if (NOT DEFINED DynamoRIO_DIR)
 endif (NOT DEFINED DynamoRIO_DIR)
 
 if (NOT DEFINED DrMemoryFramework_DIR)
-  set(DrMemoryFramework_DIR "${PROJECT_SOURCE_DIR}/drmemory/drmf" CACHE PATH
+  set(DrMemoryFramework_DIR "${PROJECT_SOURCE_DIR}/dynamorio/drmemory/drmf" CACHE PATH
       "DrMemory Framework directory")
 endif (NOT DEFINED DrMemoryFramework_DIR)
 
