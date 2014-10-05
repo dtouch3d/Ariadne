@@ -21,7 +21,7 @@ brelly(unsigned int thread, app_pc addr)
     byte lockset = shadow_bytes[1];
 
     thread_info_t* main_info = drvector_get_entry(thread_info_vec, 0);
-
+    thread_info_t* accessor_info = drvector_get_entry(thread_info_vec, i);
     thread_info_t* thread_info = drvector_get_entry(thread_info_vec, thread);
 
     int i;
