@@ -31,8 +31,8 @@ typedef struct
 typedef struct
 {
     unsigned int tid;
-    lock_info_t lock[MAX_LOCKS];
-    size_t num_locks;
+    byte lockset;
+    size_t num_locks_held;
     drvector_t* sbag;
     drvector_t* pbag;
 } thread_info_t;
@@ -57,6 +57,14 @@ drvector_t* thread_info_vec;
 static malloc_chunk_t malloc_table[MAX_CHUNKS];
 static int num_malloc_chunk;
 static void* malloc_table_lock;
+
+/* contains the info of every lock. Each thread has a bitmask representing which
+ * locks are held during execution */
+
+lock_info_t lock[MAX_LOCKS];
+
+static size_t num_locks = 0;
+void* lock_mutex;
 
 static void
 pthread_create_event(void *wrapcxt, void **user_data);
@@ -198,7 +206,7 @@ static void
 pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 {
     /* pthread_mutex_lock wrap here */
-    void* lock = drwrap_get_arg(wrapcxt, 0);
+    void* lock_arg = drwrap_get_arg(wrapcxt, 0);
 
     thread_info_t* thread_info = get_thread_info(wrapcxt);
 
@@ -206,14 +214,42 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
     if (thread_info->tid == 0)
         return;
 
-    thread_info->lock[thread_info->num_locks].addr = lock;
-    thread_info->lock[thread_info->num_locks].alive = 1;
-    thread_info->num_locks++;
 
-    if (thread_info->num_locks >= MAX_LOCKS)
+    dr_mutex_lock(lock_mutex);
+
+    dr_printf("num_locks: %d\n", num_locks);
+
+    int i;
+    for (i=0; i<num_locks; i++)
+    {
+        if (lock[i].addr == lock_arg)
+        {
+            dr_printf("[+] thread # %d lock exists @ %p\n", thread_info->tid, lock_arg);
+            lock[i].alive = 1;
+
+            thread_info->lockset |= 1 << i;
+            thread_info->num_locks_held++;
+
+            dr_mutex_unlock(lock_mutex);
+
+            return;
+        }
+    }
+
+    lock[num_locks].addr = lock_arg;
+    lock[num_locks].alive = 1;
+
+    num_locks++;
+
+    dr_mutex_unlock(lock_mutex);
+
+    if (num_locks >= MAX_LOCKS)
     {
         dr_printf("[!!] max thread locks exceeded\n");
     }
+
+    thread_info->lockset |= 1 << i;
+    thread_info->num_locks_held++;
 
     show_linenum(wrapcxt, __func__);
     return;
@@ -222,19 +258,36 @@ pthread_mutex_lock_event(void *wrapcxt, void **user_data)
 static void
 pthread_mutex_unlock_event(void *wrapcxt, void **user_data)
 {
-    void* lock = drwrap_get_arg(wrapcxt, 0);
+    void* lock_arg = drwrap_get_arg(wrapcxt, 0);
 
     thread_info_t* thread_info = get_thread_info(wrapcxt);
 
+    /* in "main" */
+    if (thread_info->tid == 0)
+        return;
+
+    dr_mutex_lock(lock_mutex);
     int i;
-    for (i=0; i<thread_info->num_locks; i++)
+    for (i=0; i<num_locks; i++)
     {
-        if (thread_info->lock[i].addr == lock)
+        if (lock[i].addr == lock_arg)
         {
-            dr_printf("[+] killed lock @ %p\n", lock);
-            thread_info->lock[i].alive = 0;
+            dr_printf("[+] thread #%d killed lock @ %p\n", thread_info->tid, lock_arg);
+            lock[i].alive = 0;
+
+            thread_info->lockset &= (0 << i);
+
+            dr_mutex_unlock(lock_mutex);
+            return;
+        } else {
+            dr_printf("[+] thread #%d lock @ %p\n != lock[%d] @ %p", thread_info->tid, lock_arg, i, lock[i].addr);
         }
+
     }
+
+    dr_mutex_unlock(lock_mutex);
+
+    dr_printf("[!!] held lock not found on global lock array!\n");
 
     /* pthread_mutex_unlock wrap here */
     show_linenum(wrapcxt, __func__);

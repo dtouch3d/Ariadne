@@ -141,7 +141,8 @@ event_thread_init(void* drcontext)
 
     drvector_append(thread_info->sbag, (void*)*tid);
 
-    thread_info->num_locks = 0;
+    thread_info->lockset = 0;
+    thread_info->num_locks_held = 0;
 }
 
 static void
@@ -151,7 +152,7 @@ event_thread_exit(void* drcontext)
 
     unsigned int tid = thread_info->tid;
 
-    dr_printf("Total locks held from thread #%d : %d\n", tid, thread_info->num_locks);
+    dr_printf("Total locks held from thread #%d : %d\n", tid, thread_info->num_locks_held);
 
     int i;
     drvector_t* sbag = thread_info->sbag;
@@ -279,6 +280,7 @@ event_exit(void)
     dr_mutex_destroy(num_threads_lock);
     dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
+    dr_mutex_destroy(lock_mutex);
 
     /* TODO: Free properly */
     /*dr_global_free(thread_info_vec, sizeof(drvector_t));*/
@@ -308,6 +310,7 @@ dr_init(client_id_t id)
     num_threads_lock = dr_mutex_create();
     malloc_table_lock = dr_mutex_create();
     runlock = dr_mutex_create();
+    lock_mutex = dr_mutex_create();
 
     tls_index = drmgr_register_tls_field();
 
