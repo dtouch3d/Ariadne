@@ -14,60 +14,8 @@
 void* runlock;
 static int running_thread = 0;
 
-bool
-in_drvector(drvector_t *vec, void* elem)
-{
-    int i;
-    for (i=0; i<vec->entries; i++)
-    {
-        if (drvector_get_entry(vec, i) == elem)
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
-/* We use 2 byte per 1 bytes of memory, indicating the thread of the last
- * access to memory and the set of locks held during mem ref as bitmask to the
- * thread's lock array.
- */
-#define SHADOW_GRANULARITY 1
-#define SHADOW_MAP_SCALE   UMBRA_MAP_SCALE_UP_2X
-
-#define SHADOW_DEFAULT_VALUE      19
-#define SHADOW_DEFAULT_VALUE_SIZE 1
-
-
-void
-shadow_get_byte(app_pc addr, byte* shadow_bytes)
-{
-    /*byte* val = dr_global_alloc(2);*/
-    size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = 2;
-    int res =umbra_read_shadow_memory(umbra_map, addr, app_size, &shdw_size, shadow_bytes);
-
-    if (res != DRMF_SUCCESS || shdw_size != 2)
-    {
-        dr_printf("[!] failed to get shadow byte of %p : %d\n", addr, res);
-    }
-    /*dr_printf("[!] (get) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);*/
-    /*return val;*/
-}
-
-void
-shadow_set_byte(app_pc addr, byte* val)
-{
-    size_t app_size = SHADOW_GRANULARITY;
-    size_t shdw_size = 2;
-    int res = umbra_write_shadow_memory(umbra_map, addr, app_size, &shdw_size, val);
-    if (res != DRMF_SUCCESS || shdw_size != 2)
-    {
-        dr_printf("[!] failed to set shadow byte of %p : %d\n", addr, res);
-    }
-    /*dr_printf("[!] (set) shdw_size: %d, sizeof(val): %d\n", shdw_size, 2);*/
-}
-
+/* Checks the memory access for race conditions */
 
 static void
 brelly(unsigned int thread, app_pc addr)
@@ -376,29 +324,6 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
         }
     }
     return DR_EMIT_DEFAULT;
-}
-
-static void
-shadow_memory_init(void)
-{
-    umbra_map_options_t umbra_map_ops;
-
-    memset(&umbra_map_ops, 0, sizeof(umbra_map_ops));
-    umbra_map_ops.struct_size = sizeof(umbra_map_ops);
-    umbra_map_ops.flags = UMBRA_MAP_CREATE_SHADOW_ON_TOUCH;
-    umbra_map_ops.scale = SHADOW_MAP_SCALE;
-    umbra_map_ops.default_value = SHADOW_DEFAULT_VALUE;
-    umbra_map_ops.default_value_size = SHADOW_DEFAULT_VALUE_SIZE;
-
-    if (umbra_create_mapping(&umbra_map_ops, &umbra_map) != DRMF_SUCCESS)
-        dr_printf("[!] fail to create shadow memory mapping");
-}
-
-void
-shadow_memory_destroy(void)
-{
-    if (umbra_destroy_mapping(umbra_map) != DRMF_SUCCESS)
-        dr_printf("[!] fail to destroy shadow memory");
 }
 
 static void
