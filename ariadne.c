@@ -185,6 +185,8 @@ event_thread_init(void* drcontext)
 
     *tid = thread_info->tid;
 
+    dr_printf("[+] our tid: %d, system tid: %d, drcontext: %p\n", *tid, dr_get_thread_id(drcontext), drcontext);
+
     drmgr_set_tls_field(drcontext, tls_index, tid);
 
     thread_info->sbag = dr_global_alloc(sizeof(drvector_t));
