@@ -15,4 +15,4 @@ make
 How to run
 ----------
 
-./ariadne.sh <program> <program parameters>
+./ariadne.sh < program > < program parameters >
