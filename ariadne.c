@@ -337,7 +337,6 @@ event_exit(void)
     shadow_memory_destroy();
 
     dr_mutex_destroy(num_threads_lock);
-    dr_mutex_destroy(malloc_table_lock);
     dr_mutex_destroy(runlock);
     dr_mutex_destroy(lock_mutex);
 
@@ -366,7 +365,6 @@ dr_init(client_id_t id)
     shadow_memory_init();
 
     num_threads_lock = dr_mutex_create();
-    malloc_table_lock = dr_mutex_create();
     runlock = dr_mutex_create();
     lock_mutex = dr_mutex_create();
 
@@ -375,5 +373,9 @@ dr_init(client_id_t id)
     thread_info_vec = dr_global_alloc(sizeof(drvector_t));
     drvector_init(thread_info_vec, 16, true /* synch */, NULL);
 
-    memset(malloc_table, 0, MAX_CHUNKS*sizeof(malloc_chunk_t));
+    /* We set synch to false because we need manual synch for
+     * chunk insert and search.
+     */
+    malloc_table = dr_global_alloc(sizeof(drvector_t));
+    drvector_init(malloc_table, 16, false /* synch */, NULL);
 }

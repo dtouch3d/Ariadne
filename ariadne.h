@@ -5,7 +5,7 @@
 /* XXX: For now a maximum of 8 locks, the size of bits in the shadow lock set memory
  * A bit is set if the corresponding lock was held during the memory access */
 #define MAX_LOCKS 8
-#define MAX_CHUNKS 1000
+
 #define MAX_STR 100
 
 static umbra_map_t* umbra_map;
@@ -55,9 +55,8 @@ typedef struct
 /* Holds a thread_info struct of each thread */
 drvector_t* thread_info_vec;
 
-static malloc_chunk_t malloc_table[MAX_CHUNKS];
+static drvector_t* malloc_table;
 static int num_malloc_chunk;
-static void* malloc_table_lock;
 
 /* contains the info of every lock. Each thread has a bitmask representing which
  * locks are held during execution */
@@ -97,19 +96,20 @@ show_linenum(void* wrapcxt, const char* funcname);
 static bool
 in_malloc_chunk(app_pc addr)
 {
-    dr_mutex_lock(malloc_table_lock);
     int i;
-    for (i=0; i<num_malloc_chunk; i++)
+    drvector_lock(malloc_table);
+    for (i=0; i<malloc_table->entries; i++)
     {
-        malloc_chunk_t chunk = malloc_table[i];
-        if (addr >= chunk.addr && addr < chunk.addr + chunk.size)
+        malloc_chunk_t* chunk = drvector_get_entry(malloc_table, i);
+        if (addr >= chunk->addr && addr < chunk->addr + chunk->size)
         {
-            dr_mutex_unlock(malloc_table_lock);
-            dr_printf("[+] in malloc chunk at %p, size %d\n", chunk.addr, chunk.size);
+            dr_printf("[+] in malloc chunk at %p, size %d\n",
+                      chunk->addr, chunk->size);
+            drvector_unlock(malloc_table);
             return true;
         }
     }
-    dr_mutex_unlock(malloc_table_lock);
+    drvector_unlock(malloc_table);
     return false;
 }
 
@@ -120,19 +120,6 @@ in_main_module(app_pc addr)
     module_data_t* main_module = dr_get_main_module();
 
     return dr_module_contains_addr(main_module, addr);
-}
-
-void
-print_malloc_chunks(void)
-{
-    dr_mutex_lock(malloc_table_lock);
-    int i;
-    for (i=0; i<num_malloc_chunk; i++)
-    {
-        malloc_chunk_t chunk = malloc_table[i];
-        dr_printf("[+] malloc chunk #%d at %p, size %d\n", i, chunk.addr, chunk.size);
-    }
-    dr_mutex_unlock(malloc_table_lock);
 }
 
 /* Table mapping function names to functions. Those
@@ -325,13 +312,15 @@ malloc_post_event(void *wrapcxt, void *user_data)
 
     app_pc retval = drwrap_get_retval(wrapcxt);
 
-    dr_mutex_lock(malloc_table_lock);
-    int idx = num_malloc_chunk;
-    num_malloc_chunk++;
-    dr_mutex_unlock(malloc_table_lock);
+    malloc_chunk_t* chunk = dr_global_alloc(sizeof(malloc_chunk_t));
+    chunk->addr = retval;
+    chunk->size = (size_t)user_data;
 
-    malloc_table[idx].addr = retval;
-    malloc_table[idx].size = (size_t)user_data;
+    drvector_lock(malloc_table);
+
+    drvector_append(malloc_table, chunk);
+
+    drvector_unlock(malloc_table);
 
     /* create shadow memory */
     if (umbra_create_shadow_memory(umbra_map, 0 /*options*/, retval, (size_t)user_data,
