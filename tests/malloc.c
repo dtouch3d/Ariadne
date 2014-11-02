@@ -14,7 +14,7 @@ void *PrintHello(void *threadid)
    long tid;
    tid = (long)threadid;
 
-   array[0] = tid;
+   array[tid] = tid;
 
    printf("Hello World! It's me, thread #%ld!\n", tid);
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
    int rc;
    long t;
 
-   array = malloc(sizeof(int));
+   array = malloc(NUM_THREADS*sizeof(int));
 
    for(t=0;t<NUM_THREADS;t++){
        rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);

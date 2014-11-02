@@ -250,16 +250,19 @@ opnd_calc_address(void* drcontext, opnd_t opnd)
 }
 
 void*
-clean_call(void* drcontext, app_pc addr)
+clean_call(app_pc addr)
 {
-    byte b[2];
-    shadow_get_byte(addr, b);
-    /*dr_printf("clean call drcontext @ %p\n", drcontext);*/
-    /*dr_printf("[+] in instrumented memory @ %p\n", addr);*/
+    /*byte b[2];*/
+    /*shadow_get_byte(addr, b);*/
+
+    void *drcontext = dr_get_current_drcontext();
+    dr_printf("[+] clean call drcontext @ %p\n", drcontext);
+    dr_printf("[+] in instrumented memory @ %p\n", addr);
     /*dr_printf("[+]      shadow mem: %d, %d\n", b[0], b[1]);*/
 
-    thread_info_t* thread_info = get_thread_info_helper(drcontext, true);
-    brelly((byte)thread_info->tid, addr);
+    /*thread_info_t* thread_info = get_thread_info_helper(drcontext, true);*/
+    /*brelly((byte)thread_info->tid, addr);*/
+
     return NULL;
 }
 
@@ -282,11 +285,8 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                 app_pc addr = opnd_calc_address(drcontext, opnd);
                 if(in_malloc_chunk(addr))
                 {
-                    dr_printf("[+] bb_insert: drcontext = %p\n", drcontext);
-                    dr_printf("[+] dr_using_private_caches: %d\n", dr_using_all_private_caches());
-                    dr_printf("[+] thread id %d\n", dr_get_thread_id(drcontext));
-                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
-                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr));
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1,
+                                         OPND_CREATE_INTPTR(addr));
                 }
             }
         }
@@ -312,14 +312,8 @@ event_bb_insert(void *drcontext, void *tag, instrlist_t *bb, instr_t *instr,
                      * Should be different for every thread so we can take the tls storage
                      */
 
-                    dr_printf("[+] bb_insert: drcontext = %p\n", drcontext);
-                    dr_printf("[+] dr_using_private_caches: %d", dr_using_all_private_caches());
-                    dr_printf("[+] thread id %d\n", dr_get_thread_id(drcontext));
-
-                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 2,
-                            OPND_CREATE_INTPTR(drcontext), OPND_CREATE_INTPTR(addr));
-
-
+                    dr_insert_clean_call(drcontext, bb, instr, clean_call, false, 1,
+                                         OPND_CREATE_INTPTR(addr));
 
                 }
             }
