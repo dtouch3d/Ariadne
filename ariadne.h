@@ -493,14 +493,14 @@ shadow_memory_init(void)
     umbra_map_ops.default_value_size = SHADOW_DEFAULT_VALUE_SIZE;
 
     if (umbra_create_mapping(&umbra_map_ops, &umbra_map) != DRMF_SUCCESS)
-        dr_printf("[!] fail to create shadow memory mapping");
+        dr_printf("[!] failed to create shadow memory mapping");
 }
 
 void
 shadow_memory_destroy(void)
 {
     if (umbra_destroy_mapping(umbra_map) != DRMF_SUCCESS)
-        dr_printf("[!] fail to destroy shadow memory");
+        dr_printf("[!] failed to destroy shadow memory");
 }
 
 
